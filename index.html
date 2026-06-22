@@ -262,7 +262,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp }
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, setDoc, getDoc }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // =====================================================
@@ -400,6 +400,77 @@ function getLocalReports() {
 }
 function saveLocalReports(arr) {
   try { localStorage.setItem('daily_reports', JSON.stringify(arr)); } catch(e) {}
+}
+
+// ===== 체크리스트 상태 Firebase 연동 =====
+// Firestore 컬렉션: checklist_state / 문서 ID: 날짜키(2026-06-23)
+// 구조: { checks: [0, 2, 3] }  ← 완료된 항목 인덱스 배열
+
+// 날짜별 체크 상태 실시간 구독 (날짜가 바뀔 때마다 호출)
+let _checkUnsub = null;
+
+window._fbSubscribeChecks = function(dateKey) {
+  // 이전 구독 해제
+  if (_checkUnsub) { _checkUnsub(); _checkUnsub = null; }
+
+  const checkDoc = doc(db, 'checklist_state', dateKey);
+  _checkUnsub = onSnapshot(checkDoc, (snap) => {
+    const checks = snap.exists() ? (snap.data().checks || []) : [];
+    // 전역 캐시 업데이트
+    window._checkCache = window._checkCache || {};
+    window._checkCache[dateKey] = checks;
+    // 현재 보고 있는 날짜와 일치할 때만 UI 갱신
+    if (window._currentCheckKey === dateKey) {
+      applyChecksToUI(dateKey, checks);
+    }
+  }, (err) => {
+    console.error('체크리스트 구독 오류:', err);
+  });
+};
+
+window._fbSetCheck = async function(dateKey, idx, isDone) {
+  try {
+    const checkDoc = doc(db, 'checklist_state', dateKey);
+    const snap = await getDoc(checkDoc);
+    let checks = snap.exists() ? (snap.data().checks || []) : [];
+    if (isDone) {
+      if (!checks.includes(idx)) checks.push(idx);
+    } else {
+      checks = checks.filter(i => i !== idx);
+    }
+    await setDoc(checkDoc, { checks, updatedAt: serverTimestamp() });
+    // 로컬 캐시도 즉시 업데이트 (실시간 구독 오기 전에 UI 반영)
+    window._checkCache = window._checkCache || {};
+    window._checkCache[dateKey] = checks;
+  } catch(e) {
+    console.error('체크 저장 오류:', e);
+    // 오프라인 fallback: localStorage
+    const arr = JSON.parse(localStorage.getItem('checks_'+dateKey)||'[]');
+    if (isDone) { if(!arr.includes(idx)) arr.push(idx); }
+    else { const p=arr.indexOf(idx); if(p>-1) arr.splice(p,1); }
+    localStorage.setItem('checks_'+dateKey, JSON.stringify(arr));
+  }
+};
+
+window._fbGetChecks = function(dateKey) {
+  // 캐시 우선, 없으면 localStorage fallback
+  if (window._checkCache && window._checkCache[dateKey] !== undefined) {
+    return window._checkCache[dateKey];
+  }
+  try { return JSON.parse(localStorage.getItem('checks_'+dateKey)||'[]'); } catch(e) { return []; }
+};
+
+function applyChecksToUI(dateKey, checks) {
+  const items = document.querySelectorAll('#task-list .task-item');
+  items.forEach((el, idx) => {
+    const chk = el.querySelector('.check');
+    const txt = el.querySelector('.task-text');
+    if (!chk || !txt) return;
+    const isDone = checks.includes(idx);
+    if (isDone) { chk.classList.add('done'); txt.classList.add('done-text'); }
+    else { chk.classList.remove('done'); txt.classList.remove('done-text'); }
+  });
+  updateProgress();
 }
 
 </script>
@@ -679,7 +750,10 @@ function renderToday(){
   const items=ALL_SCHEDULE[key]||[];
   const timed=items.filter(i=>i.time);
   const notimed=items.filter(i=>!i.time);
-  const savedChecks=getSavedChecks(key);
+  // Firebase 구독 시작 (날짜별)
+  window._currentCheckKey=key;
+  if(window._fbSubscribeChecks) window._fbSubscribeChecks(key);
+  const savedChecks=(window._fbGetChecks?window._fbGetChecks(key):[])||[];
   const list=document.getElementById('task-list');
   if(!items.length){
     list.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">등록된 일정이 없어요</div>';
@@ -706,15 +780,23 @@ function renderToday(){
   }
   updateProgress();
 }
-function getSavedChecks(key){try{const v=localStorage.getItem('checks_'+key);return v?JSON.parse(v):[];}catch(e){return[];}}
-function setSavedChecks(key,arr){try{localStorage.setItem('checks_'+key,JSON.stringify(arr));}catch(e){}}
 function toggleTask(el,key,idx){
-  el.querySelector('.check').classList.toggle('done');
-  el.querySelector('.task-text').classList.toggle('done-text');
-  const checks=getSavedChecks(key);
-  const pos=checks.indexOf(idx);
-  if(pos===-1)checks.push(idx); else checks.splice(pos,1);
-  setSavedChecks(key,checks);
+  const chk=el.querySelector('.check');
+  const txt=el.querySelector('.task-text');
+  const willDone=!chk.classList.contains('done');
+  chk.classList.toggle('done');
+  txt.classList.toggle('done-text');
+  // Firebase 저장 (없으면 localStorage fallback)
+  if(window._fbSetCheck){
+    window._fbSetCheck(key,idx,willDone);
+  } else {
+    try{
+      const arr=JSON.parse(localStorage.getItem('checks_'+key)||'[]');
+      if(willDone){if(!arr.includes(idx))arr.push(idx);}
+      else{const p=arr.indexOf(idx);if(p>-1)arr.splice(p,1);}
+      localStorage.setItem('checks_'+key,JSON.stringify(arr));
+    }catch(e){}
+  }
   updateProgress();
 }
 function updateProgress(){
