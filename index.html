@@ -19,20 +19,6 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .content{padding:16px}
 
 
-/* LABOR */
-.labor-table{width:100%;border-collapse:collapse;font-size:11px;min-width:340px}
-.labor-table th{background:#1D5BA6;color:#fff;padding:6px 4px;text-align:center;font-weight:600;white-space:nowrap;position:sticky;top:0}
-.labor-table th:first-child{text-align:left;padding-left:8px;min-width:60px}
-.labor-table td{padding:5px 4px;text-align:center;border-bottom:1px solid #f0f0f0;vertical-align:middle}
-.labor-table td:first-child{text-align:left;padding-left:8px;font-size:11px;font-weight:600;color:#1d1d1f;white-space:nowrap}
-.labor-table tr:last-child td{background:#f0f6ff;font-weight:700;color:#1D5BA6;border-top:2px solid #1D5BA6}
-.labor-check{width:20px;height:20px;border-radius:5px;border:1.5px solid #d1d1d6;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
-.labor-check.am{background:#5BA4CF;border-color:#5BA4CF}
-.labor-check.pm{background:#1D5BA6;border-color:#1D5BA6}
-.labor-check.am::after,.labor-check.pm::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
-.labor-val{font-size:12px;font-weight:700;color:#1D5BA6}
-.labor-col{display:flex;flex-direction:column;align-items:center;gap:3px}
-.labor-col-label{font-size:9px;color:#86868b}
 /* TODAY */
 .today-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
 .today-title{font-size:16px;font-weight:600;color:#1d1d1f;flex:1;text-align:center}
@@ -199,7 +185,6 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <button class="tab" onclick="switchTab('calendar',this)">캘린더</button>
       <button class="tab" onclick="switchTab('attend',this)">근태</button>
       <button class="tab" onclick="switchTab('progress',this)">공정</button>
-      <button class="tab" onclick="switchTab('labor',this)">공수</button>
     </div>
   </div>
 
@@ -255,9 +240,9 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
     <!-- CALENDAR -->
     <div id="tab-calendar" style="display:none">
       <div class="cal-header">
-        <button class="cal-nav" onclick="changeLaborMonth(-1)">‹</button>
+        <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
         <span class="cal-month" id="cal-month-label"></span>
-        <button class="cal-nav" onclick="changeLaborMonth(1)">›</button>
+        <button class="cal-nav" onclick="changeMonth(1)">›</button>
       </div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#1D5BA6"></span>반입</span>
@@ -274,22 +259,6 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         <div class="cal-detail-title" id="cal-detail-title"></div>
         <div id="cal-detail-body"></div>
       </div>
-    </div>
-
-    <!-- LABOR -->
-    <div id="tab-labor" style="display:none">
-      <!-- 월 선택 -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px">
-        <button class="nav-arrow" onclick="changeMonth(-1)">&#8249;</button>
-        <div style="flex:1;text-align:center">
-          <div style="font-size:15px;font-weight:600;color:#1d1d1f" id="labor-month-label">—</div>
-          <div style="font-size:11px;color:#86868b;margin-top:2px" id="labor-total-label">불러오는 중...</div>
-        </div>
-        <button class="nav-arrow" onclick="changeMonth(1)">&#8250;</button>
-        <button onclick="goLaborToday()" style="font-size:11px;font-weight:600;color:#1D5BA6;background:#e8f0fb;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap">이번달</button>
-      </div>
-      <!-- 공수표 테이블 -->
-      <div id="labor-table-wrap" style="overflow-x:auto"></div>
     </div>
 
     <!-- ATTENDANCE -->
@@ -1572,14 +1541,13 @@ function renderAttend(){
 
 // ===== TAB =====
 function switchTab(name,btn){
-  ['today','twoweek','calendar','progress','attend','labor'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
+  ['today','twoweek','calendar','progress','attend'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(name==='twoweek')renderTwoWeek();
   if(name==='calendar')initCal();
   if(name==='progress')initProgress();
   if(name==='attend')renderAttend();
-  if(name==='labor')initLabor();
 }
 
 // INIT — Firebase module이 준비된 후 initToday 호출
@@ -1828,95 +1796,4 @@ window.generateProgressPPT = async function() {
     status.textContent = '❌ 오류: '+e.message;
   }
 };
-// ===== LABOR (공수표) =====
-let laborYear=null,laborMonth=null;
-function getLaborKey(y,m){return String(y)+'-'+String(m).padStart(2,'0');}
-window.goLaborToday=function(){const now=new Date();laborYear=now.getFullYear();laborMonth=now.getMonth()+1;renderLabor();};
-window.changeLaborMonth=function(dir){
-  if(!laborYear){goLaborToday();return;}
-  laborMonth+=dir;
-  if(laborMonth<1){laborMonth=12;laborYear--;}if(laborMonth>12){laborMonth=1;laborYear++;}
-  renderLabor();
-};
-window.initLabor=function(){if(!laborYear)goLaborToday();else renderLabor();};
-window.toggleLaborCheck=async function(dateKey,workerId,slot){
-  const monthKey=dateKey.substring(0,7);
-  try{
-    const {doc,getDoc,setDoc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const ref=doc(window._fbDb,'labor_checks',monthKey,'days',dateKey);
-    const snap=await getDoc(ref);
-    const data=snap.exists()?(snap.data()||{}):{};
-    const wd=data[workerId]||{am:false,pm:false};
-    wd[slot]=!wd[slot];data[workerId]=wd;
-    await setDoc(ref,data);
-    renderLabor();
-  }catch(e){console.error('공수 저장 오류:',e);}
-};
-async function renderLabor(){
-  const y=laborYear,m=laborMonth,monthKey=getLaborKey(y,m);
-  document.getElementById('labor-month-label').textContent=y+'년 '+m+'월';
-  document.getElementById('labor-total-label').textContent='불러오는 중...';
-  try{
-    const {collection,getDocs,doc,getDoc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const db=window._fbDb;
-    const attSnap=await getDocs(collection(db,'worker_attendance'));
-    const monthDates=[];
-    attSnap.forEach(d=>{if(d.id.startsWith(monthKey))monthDates.push({dateKey:d.id,checks:d.data().checks||[]});});
-    monthDates.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-    const laborData={};
-    for(const {dateKey} of monthDates){
-      try{
-        const ref=doc(db,'labor_checks',monthKey,'days',dateKey);
-        const snap=await getDoc(ref);
-        laborData[dateKey]=snap.exists()?snap.data():{};
-      }catch(e){laborData[dateKey]={};}
-    }
-    if(monthDates.length===0){
-      document.getElementById('labor-total-label').textContent='출역 데이터 없음';
-      document.getElementById('labor-table-wrap').innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:24px 0">이 달 출역 기록이 없어요</div>';
-      return;
-    }
-    const DAYS_KO=['일','월','화','수','목','금','토'];
-    const thDates=monthDates.map(function(x){
-      var dt=new Date(x.dateKey),mm=dt.getMonth()+1,dd=dt.getDate(),dow=DAYS_KO[dt.getDay()],isWE=dt.getDay()===0||dt.getDay()===6;
-      return '<th style="min-width:40px;'+(isWE?'color:#e05':'')+'">'+(mm)+'/'+dd+'<br><span style="font-size:9px;font-weight:400">'+dow+'</span></th>';
-    }).join('');
-    const totalByDate={};
-    monthDates.forEach(function(x){totalByDate[x.dateKey]={total:0};});
-    const allWorkerIds=new Set();
-    monthDates.forEach(function(x){x.checks.forEach(function(id){allWorkerIds.add(id);});});
-    var rows='';
-    allWorkerIds.forEach(function(wid){
-      var worker=WORKERS.find(function(w){return w.id===wid;});
-      var name=worker?worker.name+(worker.role?' '+worker.role:''):wid;
-      var wtotal=0;
-      var cells=monthDates.map(function(x){
-        var dateKey=x.dateKey,checks=x.checks;
-        var isOut=checks.includes(wid);
-        var ld=(laborData[dateKey]||{})[wid]||{am:false,pm:false};
-        var am=isOut&&ld.am,pm=isOut&&ld.pm;
-        var pts=(am?0.5:0)+(pm?0.5:0);
-        wtotal+=pts;totalByDate[dateKey].total+=pts;
-        if(!isOut)return '<td style="background:#f9f9f9;color:#ccc">-</td>';
-        return '<td><div class="labor-col">'
-          +'<span class="labor-col-label">오전</span>'
-          +'<div class="labor-check '+(am?'am':'')+'" onclick="toggleLaborCheck(''+dateKey+'',''+wid+'','am')"></div>'
-          +'<span class="labor-col-label">오후</span>'
-          +'<div class="labor-check '+(pm?'pm':'')+'" onclick="toggleLaborCheck(''+dateKey+'',''+wid+'','pm')"></div>'
-          +'</div></td>';
-      }).join('');
-      rows+='<tr><td>'+name+'</td>'+cells+'<td class="labor-val">'+wtotal.toFixed(1)+'</td></tr>';
-    });
-    var sumCells=monthDates.map(function(x){return '<td style="font-size:11px;font-weight:700;color:#1D5BA6">'+totalByDate[x.dateKey].total.toFixed(1)+'</td>';}).join('');
-    var grand=Object.values(totalByDate).reduce(function(s,v){return s+v.total;},0);
-    document.getElementById('labor-table-wrap').innerHTML=
-      '<table class="labor-table"><thead><tr><th>이름</th>'+thDates+'<th>합계</th></tr></thead>'
-      +'<tbody>'+rows+'<tr><td>일계</td>'+sumCells+'<td class="labor-val">'+grand.toFixed(1)+'</td></tr></tbody></table>';
-    document.getElementById('labor-total-label').textContent='총 '+grand.toFixed(1)+'공수 · '+monthDates.length+'일';
-  }catch(e){
-    console.error('공수표 오류:',e);
-    document.getElementById('labor-total-label').textContent='오류: '+e.message;
-  }
-}
-
 </script>
