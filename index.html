@@ -261,8 +261,25 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 
     <!-- ATTENDANCE -->
     <div id="tab-attend" style="display:none">
-      <div class="att-range" id="att-range"></div>
+      <!-- 날짜 네비게이터 -->
+      <div class="today-nav" style="margin-bottom:14px">
+        <button class="nav-arrow" onclick="changeAttendDay(-1)">‹</button>
+        <div style="flex:1;text-align:center">
+          <div class="today-title" id="att-date-label">—</div>
+        </div>
+        <button class="nav-arrow" onclick="changeAttendDay(1)">›</button>
+        <button onclick="goAttendToday()" style="font-size:11px;font-weight:600;color:#1D5BA6;background:#e8f0fb;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap;margin-left:4px">오늘</button>
+      </div>
+      <!-- 휴가 현황 -->
       <div id="att-list"></div>
+      <!-- 기술인 출역 현황 -->
+      <div style="margin-top:20px;border-top:2px solid #e5e5e5;padding-top:16px">
+        <div style="font-size:13px;font-weight:600;color:#1d1d1f;margin-bottom:12px;display:flex;align-items:center;gap:6px">
+          👷 기술인 출역 현황
+          <span id="att-worker-count" style="font-size:11px;font-weight:400;color:#86868b"></span>
+        </div>
+        <div id="att-worker-list"></div>
+      </div>
     </div>
 
     <!-- PROGRESS -->
@@ -1068,6 +1085,8 @@ function renderTwoWeek(){
     let hasAny=false;
     w.dates.forEach(d=>{
       const key=toKey(d);
+      // ① 오늘 이전 날짜는 주간 탭에서 스킵
+      if(d < now) return;
       const items=ALL_SCHEDULE[key]||[];
       const dow=d.getDay();
       const isOff=(dow===0||dow===6||!!HOLIDAYS[key])&&!items.some(i=>i.tag==='off');
@@ -1392,29 +1411,76 @@ function renderProgress(){
 const LEAVE_LABEL_MAP={'annual':'연차','half-am':'오전 반차','half-pm':'오후 반차'};
 const LEAVE_COLOR_MAP={'annual':'#c0392b','half-am':'#e67e22','half-pm':'#8e44ad'};
 const LEAVE_BG_MAP={'annual':'#ffeaea','half-am':'#fff3e0','half-pm':'#f3f0ff'};
+
+// 기술인 명단
+const WORKERS=[
+  {id:'w1',name:'이경택',role:'소장'},
+  {id:'w2',name:'김종화',role:'차장'},
+  {id:'w3',name:'윤석원',role:'과장'},
+  {id:'w4',name:'정다애',role:'대리'},
+  {id:'w5',name:'이한영',role:'사원'},
+  {id:'w6',name:'김영서',role:'사원'},
+];
+
+let attendDayOffset=0;
+function getAttendDate(){const b=getAppToday();b.setDate(b.getDate()+attendDayOffset);return b;}
+window.changeAttendDay=function(dir){attendDayOffset+=dir;renderAttend();};
+window.goAttendToday=function(){attendDayOffset=0;renderAttend();};
+
+// 출역 체크 저장/불러오기 (날짜별 localStorage)
+function getWorkerChecks(dateKey){try{return JSON.parse(localStorage.getItem('worker_ck_'+dateKey)||'[]');}catch(e){return[];}}
+function setWorkerChecks(dateKey,arr){try{localStorage.setItem('worker_ck_'+dateKey,JSON.stringify(arr));}catch(e){}}
+
+window.toggleWorker=function(workerId,dateKey){
+  const checks=getWorkerChecks(dateKey);
+  const idx=checks.indexOf(workerId);
+  if(idx===-1)checks.push(workerId); else checks.splice(idx,1);
+  setWorkerChecks(dateKey,checks);
+  renderAttend();
+};
+
 function renderAttend(){
-  const now=getAppToday();const todayKey=toKey(now);
+  const d=getAttendDate();
+  const dateKey=toKey(d);
   const days=['일','월','화','수','목','금','토'];
-  const list=[];for(let i=-7;i<=7;i++){const d=new Date(now);d.setDate(now.getDate()+i);list.push(d);}
-  const start=list[0],end=list[list.length-1];
-  document.getElementById('att-range').textContent=(start.getMonth()+1)+'월 '+start.getDate()+'일 ~ '+(end.getMonth()+1)+'월 '+end.getDate()+'일';
+  const todayKey=toKey(getAppToday());
+  const isToday=dateKey===todayKey;
+
+  // 날짜 라벨
+  document.getElementById('att-date-label').textContent=
+    'W'+getWeekNum(d)+' · '+(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
+
+  // ── 휴가 현황 ──
   const el=document.getElementById('att-list');
-  const daysWithLeave=list.filter(d=>getLeavesFromSchedule(toKey(d)).length>0);
-  if(!daysWithLeave.length){
-    el.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:40px 0">이 기간 내 휴가 신청이 없어요</div>';return;
+  const leaves=getLeavesFromSchedule(dateKey);
+  if(!leaves.length){
+    el.innerHTML='<div style="font-size:13px;color:#86868b;padding:8px 0 4px">이 날 휴가 신청이 없어요</div>';
+  } else {
+    el.innerHTML=`<div style="font-size:12px;font-weight:600;color:#86868b;margin-bottom:8px">휴가</div>`+
+    leaves.map(l=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f5f5f7;border-radius:10px;margin-bottom:6px">
+        <span style="font-size:13px;color:#1d1d1f;font-weight:500">${l.name}</span>
+        <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;background:${LEAVE_BG_MAP[l.type]};color:${LEAVE_COLOR_MAP[l.type]}">${LEAVE_LABEL_MAP[l.type]}</span>
+      </div>`).join('');
   }
-  el.innerHTML=daysWithLeave.map(d=>{
-    const key=toKey(d);const isToday=key===todayKey;
-    const leaves=getLeavesFromSchedule(key);
-    const dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
-    const leaveItems=leaves.map(l=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
-      <span style="font-size:13px;color:#1d1d1f;font-weight:500">${l.name}</span>
-      <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;background:${LEAVE_BG_MAP[l.type]};color:${LEAVE_COLOR_MAP[l.type]}">${LEAVE_LABEL_MAP[l.type]}</span></div>`).join('');
-    return`<div style="background:${isToday?'#f0f6ff':'#f5f5f7'};border-radius:12px;padding:12px 14px;margin-bottom:10px;${isToday?'border:1.5px solid #1D5BA6':''}">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">${isToday?'<div style="width:6px;height:6px;border-radius:50%;background:#1D5BA6"></div>':''}
-        <span style="font-size:13px;font-weight:600;color:${isToday?'#1D5BA6':'#1d1d1f'}">${dateLabel}</span>
-        <span style="font-size:11px;color:#86868b">${leaves.length}명</span></div>
-      <div>${leaveItems}</div></div>`;
+
+  // ── 기술인 출역 현황 ──
+  const checks=getWorkerChecks(dateKey);
+  const checkedCount=checks.length;
+  document.getElementById('att-worker-count').textContent=
+    `출역 ${checkedCount}명 / 전체 ${WORKERS.length}명`;
+
+  const workerEl=document.getElementById('att-worker-list');
+  workerEl.innerHTML=WORKERS.map(w=>{
+    const checked=checks.includes(w.id);
+    return`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f5f5f7;border-radius:10px;margin-bottom:6px;cursor:pointer;-webkit-user-select:none;user-select:none"
+      onclick="toggleWorker('${w.id}','${dateKey}')">
+      <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${checked?'#1D5BA6':'#d1d1d6'};background:${checked?'#1D5BA6':'#fff'};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+        ${checked?'<div style="width:11px;height:7px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)"></div>':''}
+      </div>
+      <span style="font-size:13px;font-weight:600;color:${checked?'#1D5BA6':'#1d1d1f'}">${w.name} ${w.role}</span>
+      <span style="margin-left:auto;font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;background:${checked?'#e8f0fb':'#f0f0f0'};color:${checked?'#1D5BA6':'#86868b'}">${checked?'출역':'미출역'}</span>
+    </div>`;
   }).join('');
 }
 
