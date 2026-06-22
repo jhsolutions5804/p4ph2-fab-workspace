@@ -238,8 +238,15 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 <div id="printArea" style="display:none;"></div>
 
 <script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, getDocs, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ALL_SCHEDULE, WORKERS, db } from './data.js';
+import { ALL_SCHEDULE, WORKERS, FIREBASE_CONFIG } from './data.js';
+
+// 중복 초기화 방지 — 앱 이름 'daily-report' 으로 별도 등록
+let app;
+try { app = getApp('daily-report'); }
+catch(e) { app = initializeApp(FIREBASE_CONFIG, 'daily-report'); }
+const db = getFirestore(app);
 
 // 구역 정의
 const ZONES = [
