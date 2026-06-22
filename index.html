@@ -19,9 +19,11 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .content{padding:16px}
 
 /* TODAY */
-.today-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.today-title{font-size:16px;font-weight:600;color:#1d1d1f}
-.progress-pill{font-size:12px;color:#1D5BA6;background:#e8f0fb;padding:3px 10px;border-radius:20px}
+.today-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.today-title{font-size:16px;font-weight:600;color:#1d1d1f;flex:1;text-align:center}
+.nav-arrow{background:none;border:1px solid #d1d1d6;border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#86868b;font-size:18px;flex-shrink:0}
+.nav-arrow:active{background:#e5e5e5}
+.progress-pill{font-size:12px;color:#1D5BA6;background:#e8f0fb;padding:3px 10px;border-radius:20px;white-space:nowrap}
 .prog-bar-wrap{height:4px;background:#e5e5e5;border-radius:2px;margin-top:8px}
 .prog-bar{height:100%;border-radius:2px;background:#1D5BA6;transition:width 0.3s}
 .task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;-webkit-user-select:none;user-select:none}
@@ -42,6 +44,23 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .task-text{font-size:14px;color:#1d1d1f;line-height:1.45}
 .task-text.done-text{color:#c7c7cc;text-decoration:line-through}
 
+/* DAILY REPORT */
+.report-section{margin-top:24px;border-top:2px solid #e5e5e5;padding-top:16px}
+.report-title{font-size:13px;font-weight:600;color:#1d1d1f;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.report-title::before{content:'📋';font-size:14px}
+.report-list{margin-bottom:10px}
+.report-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:#f5f5f7;border-radius:10px;margin-bottom:6px}
+.report-item-body{flex:1;min-width:0}
+.report-item-meta{font-size:11px;color:#86868b;margin-bottom:2px}
+.report-item-text{font-size:13px;color:#1d1d1f;line-height:1.4;word-break:break-all}
+.report-item-del{background:none;border:none;color:#c7c7cc;font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;line-height:1}
+.report-input-row{display:flex;gap:8px}
+.report-input{flex:1;border:1.5px solid #e5e5e5;border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;background:#fafafa;color:#1d1d1f;line-height:1.4}
+.report-input:focus{border-color:#1D5BA6;background:#fff}
+.report-submit{background:#1D5BA6;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;align-self:flex-end}
+.report-submit:active{background:#1348a0}
+.report-hint{font-size:11px;color:#86868b;margin-top:6px;line-height:1.4}
+
 /* TWO WEEK */
 .week-day{margin-bottom:20px}
 .week-day-label{font-size:11px;font-weight:600;color:#86868b;letter-spacing:0.5px;margin-bottom:8px;text-transform:uppercase}
@@ -57,18 +76,25 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .cal-month{font-size:15px;font-weight:600;color:#1d1d1f}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
 .cal-dow{font-size:10px;color:#86868b;padding:4px 0;font-weight:600}
-.cal-day{padding:4px 2px;border-radius:10px;cursor:pointer;min-height:48px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:background 0.12s}
+.cal-dow:first-child{color:#c0392b}
+.cal-dow:last-child{color:#1D5BA6}
+.cal-day{padding:4px 2px;border-radius:10px;cursor:pointer;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:background 0.12s}
 .cal-day:active{background:#e5e5e5}
 .cal-day.selected{background:#e8f0fb}
 .cal-day-num{font-size:13px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .cal-day.today .cal-day-num{background:#1D5BA6;color:#fff;font-size:12px}
 .cal-day.selected .cal-day-num{background:#1D5BA6;color:#fff;font-size:12px}
 .cal-day.holiday .cal-day-num{color:#c0392b}
+.cal-day.sun .cal-day-num{color:#c0392b}
+.cal-day.sat .cal-day-num{color:#1D5BA6}
+.cal-day.off-day{background:#fff8f8}
+.cal-holiday-label{font-size:9px;color:#c0392b;line-height:1.1;text-align:center;max-width:100%;word-break:keep-all}
 .dot{width:5px;height:5px;border-radius:50%}
 .dot-blue{background:#1D5BA6}
 .dot-green{background:#2e7d32}
 .dot-purple{background:#5e35b1}
 .dot-red{background:#c0392b}
+.dot-orange{background:#e67e22}
 .dots-row{display:flex;gap:2px;flex-wrap:wrap;justify-content:center}
 .cal-detail{margin-top:16px;border-top:1px solid #e5e5e5;padding-top:14px}
 .cal-detail-title{font-size:14px;font-weight:600;color:#1d1d1f;margin-bottom:12px}
@@ -90,19 +116,6 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .att-row.work{background:#f5f5f7}
 .att-row.off{background:#ffeaea}
 .att-row.today-row{border:1.5px solid #1D5BA6;background:#f0f6ff}
-.att-date{min-width:80px;flex-shrink:0}
-.att-date-main{font-size:13px;font-weight:600;color:#1d1d1f}
-.att-date-sub{font-size:11px;color:#86868b;margin-top:1px}
-.att-status{flex:1}
-.att-status-label{font-size:13px;font-weight:600}
-.att-status-label.work{color:#1d1d1f}
-.att-status-label.off{color:#c0392b}
-.att-duty{font-size:11px;color:#86868b;margin-top:2px;line-height:1.4}
-.att-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
-.att-badge-work{background:#e8f0fb;color:#0a3d7a}
-.att-badge-off{background:#ffeaea;color:#7f1d1d}
-.att-badge-today{background:#1D5BA6;color:#fff}
-.att-today-marker{width:6px;height:6px;border-radius:50%;background:#1D5BA6;flex-shrink:0}
 
 /* PROGRESS */
 .ref-date{font-size:11px;color:#86868b;margin-bottom:12px;text-align:right}
@@ -146,13 +159,29 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 
     <!-- TODAY -->
     <div id="tab-today">
-      <div class="today-header">
-        <span class="today-title" id="today-title">오늘 일정</span>
+      <div class="today-nav">
+        <button class="nav-arrow" onclick="changeViewDay(-1)">‹</button>
+        <div style="flex:1;text-align:center">
+          <div class="today-title" id="today-title">오늘 일정</div>
+          <div class="prog-bar-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+        </div>
+        <button class="nav-arrow" onclick="changeViewDay(1)">›</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
         <span class="progress-pill" id="prog-text">0 / 0</span>
       </div>
-      <div class="prog-bar-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
-      <div style="height:14px"></div>
       <div id="task-list"></div>
+
+      <!-- 일일 보고사항 -->
+      <div class="report-section">
+        <div class="report-title">일일 보고사항</div>
+        <div class="report-list" id="report-list"></div>
+        <div class="report-input-row">
+          <textarea class="report-input" id="report-input" rows="2" placeholder="공유할 내용을 입력하세요..."></textarea>
+          <button class="report-submit" onclick="submitReport()">등록</button>
+        </div>
+        <div class="report-hint">💡 중요한 내용은 춘식이에게 전달하면 일정에 저장해 드려요</div>
+      </div>
     </div>
 
     <!-- TWO WEEK -->
@@ -170,6 +199,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         <span class="legend-item"><span class="legend-dot" style="background:#2e7d32"></span>검수</span>
         <span class="legend-item"><span class="legend-dot" style="background:#5e35b1"></span>교육</span>
         <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>휴무</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#e67e22"></span>연차</span>
       </div>
       <div class="cal-grid" id="cal-grid">
         <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
@@ -208,6 +238,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 </div>
 
 <script>
+// ===== 공정 데이터 =====
 const ZONES=[
   {name:'3F FIZ',total:39,반입:20,안착:20,설치:0},
   {name:'X-OB',total:19,반입:0,안착:0,설치:0},
@@ -217,6 +248,7 @@ const ZONES=[
   {name:'2F 제조부속실',total:16,반입:0,안착:0,설치:0},
 ];
 
+// ===== 일정 데이터 =====
 const ALL_SCHEDULE={
   '2026-06-22':[
     {time:'13:00',text:'안전팀장 회의 (가동1층대회의실)',tag:'meeting',tagLabel:'회의'},
@@ -233,10 +265,8 @@ const ALL_SCHEDULE={
     {time:'17:00',text:'기술인 정기교육 (최수빈프로)',tag:'edu',tagLabel:'교육'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
     {time:null,text:'FCU 공장검수 (물산)',tag:'inspect',tagLabel:'검수'},
-  
     {time:null,text:'세무서 방문 — 회사명 변경',tag:'admin',tagLabel:'행정'},
-  
-    {time:null,text:'이한영 사원 오전 반차',tag:'admin',tagLabel:'참고'},
+    {time:null,text:'이한영 사원 오전 반차',tag:'leave',tagLabel:'연차',leaveInfo:{name:'이한영 사원',type:'half-am'}},
   ],
   '2026-06-24':[
     {time:'13:00',text:'안전팀장 회의 (중회의실5)',tag:'meeting',tagLabel:'회의'},
@@ -264,7 +294,6 @@ const ALL_SCHEDULE={
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 2차 반입 5대(815~819)',tag:'fcu',tagLabel:'반입'},
     {time:'23:00',text:'E/V #13 사용',tag:'admin',tagLabel:'행정'},
-  
     {time:null,text:'W28 지게차 배차 요청',tag:'admin',tagLabel:'행정'},
     {time:null,text:'6/30 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
@@ -272,7 +301,6 @@ const ALL_SCHEDULE={
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 2차 반입 5대(831~833,838~839)',tag:'fcu',tagLabel:'반입'},
     {time:null,text:'FCU 입고검사 5대(815~819)',tag:'inspect',tagLabel:'검수'},
-  
     {time:'23:00',text:'E/V #13 사용',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-01':[
@@ -293,7 +321,6 @@ const ALL_SCHEDULE={
   '2026-07-06':[
     {time:'13:00',text:'(Ph2) 안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'(Ph2) FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
     {time:null,text:'W29 지게차 배차 요청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-07':[
@@ -301,23 +328,20 @@ const ALL_SCHEDULE={
     {time:'09:00',text:'(Ph4) 특별교육',tag:'edu',tagLabel:'교육'},
     {time:'13:00',text:'(Ph2) 안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'(Ph2) FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
     {time:'17:00',text:'(P4 Ph4) 하역장 사용 신청',tag:'admin',tagLabel:'행정'},
     {time:null,text:'7/8 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-08':[
     {time:'07:00',text:'(Ph4) EHU 8대 반입 및 설치(#13·#14)',tag:'fcu',tagLabel:'반입'},
+    {time:'11:00',text:'(Ph4) EHU 하역 및 운반 #14 하역장',tag:'fcu',tagLabel:'반입'},
     {time:'13:00',text:'(Ph2) 안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'(Ph2) FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
-    {time:'11:00',text:'(Ph4) EHU 하역 및 운반 #14 하역장',tag:'fcu',tagLabel:'반입'},
     {time:null,text:'(FAB FIZ) FCU 35EA 설치 완료',tag:'fcu',tagLabel:'FCU설치'},
   ],
   '2026-07-09':[
     {time:'07:00',text:'EHU 설치 (#17 2대)',tag:'fcu',tagLabel:'반입'},
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
     {time:null,text:'(FAB FIZ) FCU 시공 상태 자체 검수 및 검측 준비',tag:'inspect',tagLabel:'검수'},
   ],
   '2026-07-10':[
@@ -328,20 +352,17 @@ const ALL_SCHEDULE={
   '2026-07-13':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
     {time:null,text:'W29·W30 지게차 배차 요청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-14':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
     {time:null,text:'7/15 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-15':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
     {time:'23:00',text:'(X-OB) FCU 6EA 반입(861~866)',tag:'fcu',tagLabel:'반입'},
-  
     {time:null,text:'부자재 19대분 반입',tag:'admin',tagLabel:'행정'},
     {time:null,text:'7/16 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
@@ -350,7 +371,6 @@ const ALL_SCHEDULE={
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
     {time:'23:00',text:'(X-OB) FCU 6EA 반입(867~872)',tag:'fcu',tagLabel:'반입'},
-  
     {time:null,text:'7/17 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-17':[
@@ -371,13 +391,11 @@ const ALL_SCHEDULE={
   '2026-07-21':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
     {time:null,text:'7/22 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-22':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'(복합3동) FCU 4EA 반입(351~354)',tag:'fcu',tagLabel:'반입'},
-  
     {time:null,text:'부자재 14대분 반입',tag:'admin',tagLabel:'행정'},
     {time:null,text:'7/23 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
@@ -385,7 +403,6 @@ const ALL_SCHEDULE={
     {time:'10:00',text:'FCU 4EA 입고검사(351~354)',tag:'inspect',tagLabel:'검수'},
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'(복합3동) FCU 5EA 반입(355~359)',tag:'fcu',tagLabel:'반입'},
-  
     {time:null,text:'7/24 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-24':[
@@ -401,20 +418,17 @@ const ALL_SCHEDULE={
   '2026-07-28':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
-  
     {time:null,text:'7/29 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-29':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'(복합4동) FCU 4EA 반입(302A~302D)',tag:'fcu',tagLabel:'반입'},
-  
     {time:null,text:'7/30 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-30':[
     {time:'10:00',text:'FCU 4EA 입고검사(302A~302D)',tag:'inspect',tagLabel:'검수'},
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
     {time:'19:00',text:'(복합4동) FCU 5EA 반입(302E~302I)',tag:'fcu',tagLabel:'반입'},
-  
     {time:null,text:'7/31 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-07-31':[
@@ -426,65 +440,150 @@ const ALL_SCHEDULE={
   '2026-08-07':[{time:null,text:'8/10 장비감시자 신청',tag:'admin',tagLabel:'행정'}],
   '2026-08-10':[
     {time:'19:00',text:'(2F 제조부속실) FCU 8EA 반입(801~802,811~816)',tag:'fcu',tagLabel:'반입'},
-  
     {time:null,text:'8/11 장비감시자 신청',tag:'admin',tagLabel:'행정'},
   ],
   '2026-08-11':[{time:'19:00',text:'(2F 제조부속실) FCU 8EA 반입(817~824)',tag:'fcu',tagLabel:'반입'}],
   '2026-08-12':[{time:'10:00',text:'(2F 제조부속실) FCU 16EA 입고검사(801~802,811~824)',tag:'inspect',tagLabel:'검수'}],
 };
 
+// ===== 2026년 한국 공휴일 =====
+const HOLIDAYS={
+  '2026-01-01':'신정',
+  '2026-01-28':'설날 연휴',
+  '2026-01-29':'설날',
+  '2026-01-30':'설날 연휴',
+  '2026-03-01':'삼일절',
+  '2026-05-05':'어린이날',
+  '2026-05-24':'부처님오신날',
+  '2026-06-06':'현충일',
+  '2026-08-15':'광복절',
+  '2026-09-24':'추석 연휴',
+  '2026-09-25':'추석',
+  '2026-09-26':'추석 연휴',
+  '2026-10-03':'개천절',
+  '2026-10-09':'한글날',
+  '2026-12-25':'크리스마스',
+};
+
+// ===== 유틸 =====
 function pad(n){return String(n).padStart(2,'0');}
 function toKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 
-// TODAY
-function initToday(){
+// 06시 기준 오늘 날짜
+function getAppToday(){
   const now=new Date();
+  if(now.getHours()<6){now.setDate(now.getDate()-1);}
+  now.setHours(0,0,0,0);
+  return now;
+}
+
+// 토·일·공휴일 여부
+function isOffDay(dateObj){
+  const dow=dateObj.getDay();
+  const key=toKey(dateObj);
+  return dow===0||dow===6||!!HOLIDAYS[key];
+}
+
+// ALL_SCHEDULE에서 해당 날짜의 연차/반차 파싱
+function getLeavesFromSchedule(key){
+  const items=ALL_SCHEDULE[key]||[];
+  return items.filter(i=>i.tag==='leave'&&i.leaveInfo).map(i=>i.leaveInfo);
+}
+
+// ===== TODAY 탭 =====
+let viewDayOffset=0;
+
+function getViewDate(){
+  const base=getAppToday();
+  base.setDate(base.getDate()+viewDayOffset);
+  return base;
+}
+
+function changeViewDay(dir){
+  viewDayOffset+=dir;
+  renderToday();
+}
+
+function initToday(){
+  viewDayOffset=0;
+  renderToday();
+  renderReports();
+}
+
+function renderToday(){
+  const d=getViewDate();
   const days=['일','월','화','수','목','금','토'];
+  const weekNum=getWeekNum(d);
+  const key=toKey(d);
+
+  // 헤더 배지는 실제 오늘 날짜로
+  const realToday=getAppToday();
   document.getElementById('today-badge').textContent=
-    now.getFullYear()+'. '+(now.getMonth()+1)+'. '+now.getDate()+' ('+days[now.getDay()]+')';
-  const key=toKey(now);
+    realToday.getFullYear()+'. '+(realToday.getMonth()+1)+'. '+realToday.getDate()+' ('+days[realToday.getDay()]+')';
+
+  document.getElementById('today-title').textContent=
+    'W'+weekNum+' · '+(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
+
   const items=ALL_SCHEDULE[key]||[];
   const timed=items.filter(i=>i.time);
   const notimed=items.filter(i=>!i.time);
 
-  const weekNum=getWeekNum(now);
-  document.getElementById('today-title').textContent='W'+weekNum+' · '+(now.getMonth()+1)+'월 '+now.getDate()+'일('+days[now.getDay()]+')';
+  // 저장된 체크 상태 불러오기
+  const savedChecks=getSavedChecks(key);
 
   const list=document.getElementById('task-list');
   if(!items.length){
-    list.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">오늘 등록된 일정이 없어요</div>';
+    list.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">등록된 일정이 없어요</div>';
     document.getElementById('prog-text').textContent='0 / 0';
+    document.getElementById('prog-bar').style.width='0%';
     return;
   }
-  const mkItem=i=>{
+
+  list.innerHTML='';
+  const mkItem=(i,idx)=>{
     const div=document.createElement('div');
     div.className='task-item';
-    div.onclick=()=>toggleTask(div);
-    div.innerHTML=`<div class="check"></div><div class="task-body">
+    const isDone=savedChecks.includes(idx);
+    div.innerHTML=`<div class="check${isDone?' done':''}"></div><div class="task-body">
       <div class="task-meta">${i.time?`<span class="task-time">${i.time}</span>`:''}<span class="tag tag-${i.tag}">${i.tagLabel}</span></div>
-      <div class="task-text">${i.text}</div></div>`;
+      <div class="task-text${isDone?' done-text':''}">${i.text}</div></div>`;
+    div.onclick=()=>toggleTask(div,key,idx);
     return div;
   };
-  timed.forEach(i=>list.appendChild(mkItem(i)));
+
+  let globalIdx=0;
+  timed.forEach(i=>{list.appendChild(mkItem(i,globalIdx));globalIdx++;});
   if(notimed.length){
-    const div=document.createElement('div');
-    div.style.cssText='height:1px;background:#f0f0f0;margin:4px 0 8px';
-    list.appendChild(div);
-    notimed.forEach(i=>list.appendChild(mkItem(i)));
+    const sep=document.createElement('div');
+    sep.style.cssText='height:1px;background:#f0f0f0;margin:4px 0 8px';
+    list.appendChild(sep);
+    notimed.forEach(i=>{list.appendChild(mkItem(i,globalIdx));globalIdx++;});
   }
   updateProgress();
 }
 
-function getWeekNum(d){
-  const jan1=new Date(d.getFullYear(),0,1);
-  return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+// 체크 상태 localStorage 저장/불러오기
+function getSavedChecks(key){
+  try{const v=localStorage.getItem('checks_'+key);return v?JSON.parse(v):[];}catch(e){return[];}
+}
+function setSavedChecks(key,arr){
+  try{localStorage.setItem('checks_'+key,JSON.stringify(arr));}catch(e){}
 }
 
-function toggleTask(el){
-  el.querySelector('.check').classList.toggle('done');
-  el.querySelector('.task-text').classList.toggle('done-text');
+function toggleTask(el,key,idx){
+  const check=el.querySelector('.check');
+  const text=el.querySelector('.task-text');
+  check.classList.toggle('done');
+  text.classList.toggle('done-text');
+  // 저장
+  const checks=getSavedChecks(key);
+  const pos=checks.indexOf(idx);
+  if(pos===-1)checks.push(idx);
+  else checks.splice(pos,1);
+  setSavedChecks(key,checks);
   updateProgress();
 }
+
 function updateProgress(){
   const total=document.querySelectorAll('#task-list .task-item').length;
   const done=document.querySelectorAll('#task-list .check.done').length;
@@ -492,10 +591,66 @@ function updateProgress(){
   document.getElementById('prog-text').textContent=done+' / '+total;
 }
 
-// TWO WEEK
+// ===== 일일 보고사항 =====
+function getReports(){
+  try{const v=localStorage.getItem('daily_reports');return v?JSON.parse(v):[];}catch(e){return[];}
+}
+function saveReports(arr){
+  try{localStorage.setItem('daily_reports',JSON.stringify(arr));}catch(e){}
+}
+
+function renderReports(){
+  const reports=getReports();
+  const el=document.getElementById('report-list');
+  if(!reports.length){el.innerHTML='<div style="font-size:12px;color:#86868b;padding:6px 0 8px">아직 보고사항이 없어요</div>';return;}
+  el.innerHTML=reports.map((r,i)=>`
+    <div class="report-item">
+      <div class="report-item-body">
+        <div class="report-item-meta">${r.date} · ${r.author||'작성자 미상'}</div>
+        <div class="report-item-text">${r.text}</div>
+      </div>
+      <button class="report-item-del" onclick="deleteReport(${i})" title="삭제">×</button>
+    </div>`).join('');
+}
+
+function submitReport(){
+  const input=document.getElementById('report-input');
+  const text=input.value.trim();
+  if(!text)return;
+  const reports=getReports();
+  const now=new Date();
+  const dateStr=(now.getMonth()+1)+'/'+(now.getDate())+' '+(now.getHours())+':'+pad(now.getMinutes());
+  reports.unshift({text,date:dateStr,ts:Date.now()});
+  // 최근 30개만 유지
+  if(reports.length>30)reports.splice(30);
+  saveReports(reports);
+  input.value='';
+  renderReports();
+}
+
+function deleteReport(idx){
+  const reports=getReports();
+  reports.splice(idx,1);
+  saveReports(reports);
+  renderReports();
+}
+
+// Enter키로 등록 (Shift+Enter는 줄바꿈)
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('report-input');
+  if(inp){inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitReport();}});}
+});
+
+// ===== 주차 계산 =====
+function getWeekNum(d){
+  const jan1=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+}
+
+// ===== TWO WEEK =====
 function renderTwoWeek(){
   const el=document.getElementById('tab-twoweek');
-  const now=new Date();now.setHours(0,0,0,0);
+  const now=getAppToday();
   const dates=[];
   for(let i=0;i<14;i++){
     const d=new Date(now);d.setDate(now.getDate()+i);dates.push(d);
@@ -517,22 +672,34 @@ function renderTwoWeek(){
   if(!el.innerHTML.trim())el.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">2주 내 등록된 일정이 없어요</div>';
 }
 
-// CALENDAR
+// ===== CALENDAR =====
 let curMonth,curYear,selectedKey=null;
 function initCal(){
-  const now=new Date();curMonth=now.getMonth();curYear=now.getFullYear();renderCal();
+  const now=getAppToday();curMonth=now.getMonth();curYear=now.getFullYear();renderCal();
 }
+
 function getDots(key){
-  const items=ALL_SCHEDULE[key]||[];const types=new Set();
+  const d=new Date(key);
+  const types=new Set();
+  // 토/일/공휴일 → off
+  const dow=new Date(key.replace(/-/g,'/')).getDay();
+  const isHoliday=!!HOLIDAYS[key];
+  const hasOffItem=(ALL_SCHEDULE[key]||[]).some(i=>i.tag==='off');
+  if(dow===0||dow===6||isHoliday||hasOffItem)types.add('off');
+  const items=ALL_SCHEDULE[key]||[];
   items.forEach(i=>{
     if(i.tag==='fcu')types.add('in');
     else if(i.tag==='inspect')types.add('check');
     else if(i.tag==='edu')types.add('edu');
-    else if(i.tag==='off')types.add('off');
+    else if(i.tag==='leave')types.add('leave');
   });
+  // 연차 데이터도 체크
+  const leaves=getLeavesFromSchedule(key);
+  if(leaves.length)types.add('leave');
   return[...types];
 }
-const DOT_MAP={in:'dot-blue',check:'dot-green',edu:'dot-purple',off:'dot-red'};
+const DOT_MAP={in:'dot-blue',check:'dot-green',edu:'dot-purple',off:'dot-red',leave:'dot-orange'};
+
 function renderCal(){
   const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('cal-month-label').textContent=curYear+'년 '+months[curMonth];
@@ -541,45 +708,85 @@ function renderCal(){
   grid.innerHTML='';dows.forEach(d=>grid.appendChild(d));
   const first=new Date(curYear,curMonth,1).getDay();
   const daysInMonth=new Date(curYear,curMonth+1,0).getDate();
-  const today=new Date();
+  const today=getAppToday();
   for(let i=0;i<first;i++){const b=document.createElement('div');b.className='cal-day';grid.appendChild(b);}
   for(let d=1;d<=daysInMonth;d++){
     const key=curYear+'-'+pad(curMonth+1)+'-'+pad(d);
-    const cell=document.createElement('div');cell.className='cal-day';
+    const dateObj=new Date(curYear,curMonth,d);
+    const dow=dateObj.getDay();
+    const cell=document.createElement('div');
+    cell.className='cal-day';
+    // 일요일/토요일 class
+    if(dow===0)cell.classList.add('sun');
+    if(dow===6)cell.classList.add('sat');
     const isToday=today.getFullYear()===curYear&&today.getMonth()===curMonth&&today.getDate()===d;
     if(key===selectedKey)cell.classList.add('selected');
     else if(isToday)cell.classList.add('today');
     const dots=getDots(key);
-    if(dots.includes('off'))cell.classList.add('holiday');
+    // 휴무/공휴일 배경
+    const isOff=dow===0||dow===6||!!HOLIDAYS[key]||(ALL_SCHEDULE[key]||[]).some(i=>i.tag==='off');
+    if(isOff&&key!==selectedKey&&!isToday)cell.classList.add('off-day');
     const num=document.createElement('div');num.className='cal-day-num';num.textContent=d;cell.appendChild(num);
+    // 공휴일 이름 표시
+    if(HOLIDAYS[key]){
+      const label=document.createElement('div');
+      label.className='cal-holiday-label';
+      label.textContent=HOLIDAYS[key];
+      cell.appendChild(label);
+    }
     if(dots.length){
       const row=document.createElement('div');row.className='dots-row';
-      dots.forEach(e=>{const dot=document.createElement('div');dot.className='dot '+(DOT_MAP[e]||'dot-blue');row.appendChild(dot);});
+      dots.filter(e=>e!=='off').forEach(e=>{const dot=document.createElement('div');dot.className='dot '+(DOT_MAP[e]||'dot-blue');row.appendChild(dot);});
+      if(dots.includes('off')&&!HOLIDAYS[key]&&dow!==0&&dow!==6){const dot=document.createElement('div');dot.className='dot dot-red';row.appendChild(dot);}
       cell.appendChild(row);
     }
-    cell.onclick=()=>{selectedKey=selectedKey===key?null:key;renderCal();selectedKey?renderDetail(selectedKey):hideDetail();};
+    cell.onclick=()=>{selectedKey=selectedKey===key?null:key;renderCal();selectedKey?renderCalDetail(selectedKey):hideDetail();};
     grid.appendChild(cell);
   }
   if(selectedKey){
     const[sy,sm]=selectedKey.split('-').map(Number);
     if(sm-1!==curMonth||sy!==curYear)hideDetail();
-    else renderDetail(selectedKey);
+    else renderCalDetail(selectedKey);
   }
 }
-function renderDetail(key){
-  const[y,m,d]=key.split('-').map(Number);
+
+function renderCalDetail(key){
+  const parts=key.split('-').map(Number);
+  const y=parts[0],m=parts[1],d=parts[2];
   const dows=['일','월','화','수','목','금','토'];
   const dow=dows[new Date(y,m-1,d).getDay()];
-  document.getElementById('cal-detail-title').textContent=m+'월 '+d+'일('+dow+')';
+  const holidayName=HOLIDAYS[key]||'';
+  document.getElementById('cal-detail-title').textContent=m+'월 '+d+'일('+dow+')'+(holidayName?' · '+holidayName:'');
   const items=ALL_SCHEDULE[key]||[];
   const body=document.getElementById('cal-detail-body');
-  if(!items.length){body.innerHTML='<div class="cal-detail-empty">등록된 일정이 없어요</div>';}
-  else{
-    const timed=items.filter(i=>i.time);
-    const notimed=items.filter(i=>!i.time);
+  const dateObj=new Date(y,m-1,d);
+  const dayOfWeek=dateObj.getDay();
+
+  // 휴무 자동 표시 (토/일/공휴일 && 일정에 off가 없을 때)
+  const autoOff=(dayOfWeek===0||dayOfWeek===6||!!HOLIDAYS[key])&&!items.some(i=>i.tag==='off');
+  const allItems=[...items];
+  if(autoOff)allItems.unshift({time:null,text:'휴무 ('+( dayOfWeek===0?'일요일':dayOfWeek===6?'토요일':holidayName)+')',tag:'off',tagLabel:'휴무'});
+
+  // 연차/반차
+  const leaves=getLeavesFromSchedule(key);
+
+  if(!allItems.length&&!leaves.length){
+    body.innerHTML='<div class="cal-detail-empty">등록된 일정이 없어요</div>';
+  } else {
+    const timed=allItems.filter(i=>i.time&&i.tag!=='leave');
+    const notimed=allItems.filter(i=>!i.time&&i.tag!=='leave');
     const mk=i=>`<div class="cal-task"><span class="cal-task-time">${i.time||'—'}</span><div class="cal-task-body"><div class="cal-task-text">${i.text}</div><div class="cal-task-tag"><span class="tag tag-${i.tag}">${i.tagLabel}</span></div></div></div>`;
     let html=timed.map(mk).join('');
     if(notimed.length)html+=`<div style="height:1px;background:#e5e5e5;margin:6px 0 8px"></div>`+notimed.map(mk).join('');
+    if(leaves.length){
+      const LEAVE_LABEL={'annual':'연차','half-am':'오전 반차','half-pm':'오후 반차'};
+      const LEAVE_COLOR={'annual':'#c0392b','half-am':'#e67e22','half-pm':'#8e44ad'};
+      const LEAVE_BG={'annual':'#ffeaea','half-am':'#fff3e0','half-pm':'#f3f0ff'};
+      html+=`<div style="height:1px;background:#e5e5e5;margin:6px 0 8px"></div>`;
+      leaves.forEach(l=>{
+        html+=`<div class="cal-task"><span class="cal-task-time">—</span><div class="cal-task-body"><div class="cal-task-text">${l.name}</div><div class="cal-task-tag"><span class="tag" style="background:${LEAVE_BG[l.type]};color:${LEAVE_COLOR[l.type]}">${LEAVE_LABEL[l.type]}</span></div></div></div>`;
+      });
+    }
     body.innerHTML=html;
   }
   document.getElementById('cal-detail').style.display='block';
@@ -589,10 +796,11 @@ function changeMonth(dir){
   curMonth+=dir;
   if(curMonth>11){curMonth=0;curYear++;}
   if(curMonth<0){curMonth=11;curYear--;}
+  selectedKey=null;
   renderCal();
 }
 
-// PROGRESS
+// ===== PROGRESS =====
 function renderProgress(){
   const list=document.getElementById('zone-list');list.innerHTML='';
   let ts=0,ds=0,totalIn=0,doneZones=0;
@@ -620,22 +828,13 @@ function renderProgress(){
   document.getElementById('done-zones').textContent=doneZones;
 }
 
-// ATTENDANCE
-// 직원 목록
-const MEMBERS=['이경택 소장','김종화 차장','윤석원 과장','정다애 대리','이한영 사원','김영서 사원'];
-
-// 휴가 데이터: {날짜: [{name, type}]}
-// type: 'annual'(연차) | 'half-am'(오전반차) | 'half-pm'(오후반차)
-const LEAVE_DATA={
-  // 예시: '2026-06-22':[{name:'이한영 사원',type:'half-am'}],
-};
-
+// ===== ATTENDANCE =====
 const LEAVE_LABEL={'annual':'연차','half-am':'오전 반차','half-pm':'오후 반차'};
 const LEAVE_COLOR={'annual':'#c0392b','half-am':'#e67e22','half-pm':'#8e44ad'};
 const LEAVE_BG={'annual':'#ffeaea','half-am':'#fff3e0','half-pm':'#f3f0ff'};
 
 function renderAttend(){
-  const now=new Date();now.setHours(0,0,0,0);
+  const now=getAppToday();
   const todayKey=toKey(now);
   const days=['일','월','화','수','목','금','토'];
 
@@ -650,8 +849,11 @@ function renderAttend(){
 
   const el=document.getElementById('att-list');
 
-  // 휴가 있는 날만 표시, 없으면 빈 안내
-  const daysWithLeave=list.filter(d=>{ const k=toKey(d); return LEAVE_DATA[k]&&LEAVE_DATA[k].length>0; });
+  // ALL_SCHEDULE에서 연차/반차 파싱
+  const daysWithLeave=list.filter(d=>{
+    const k=toKey(d);
+    return getLeavesFromSchedule(k).length>0;
+  });
 
   if(daysWithLeave.length===0){
     el.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:40px 0">이 기간 내 휴가 신청이 없어요</div>';
@@ -661,7 +863,7 @@ function renderAttend(){
   el.innerHTML=daysWithLeave.map(d=>{
     const key=toKey(d);
     const isToday=key===todayKey;
-    const leaves=LEAVE_DATA[key];
+    const leaves=getLeavesFromSchedule(key);
     const dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
 
     const leaveItems=leaves.map(l=>`
@@ -681,6 +883,7 @@ function renderAttend(){
   }).join('');
 }
 
+// ===== TAB =====
 function switchTab(name,btn){
   ['today','twoweek','calendar','progress','attend'].forEach(t=>{
     document.getElementById('tab-'+t).style.display=t===name?'block':'none';
@@ -699,4 +902,3 @@ renderProgress();
 </script>
 </body>
 </html>
-
