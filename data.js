@@ -1,10 +1,6 @@
 // =====================================================
-// data.js — P4 Ph2 (FAB) 공유 데이터 + Firebase 인스턴스
-// workspace(index.html)와 daily-report.html이 함께 사용
+// data.js — P4 Ph2 (FAB) 공유 데이터 (순수 데이터만)
 // =====================================================
-
-import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCyQxBJ_ftfM0ImBXubmqD5gfzFR54iPmE",
@@ -14,10 +10,6 @@ export const FIREBASE_CONFIG = {
   messagingSenderId: "36946317914",
   appId: "1:36946317914:web:c6ad5f3a1b98130c99fe63"
 };
-
-// Firebase 앱 & Firestore 인스턴스 — 중복 초기화 방지
-const _app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
-export const db = getFirestore(_app);
 
 export const WORKERS = [
   {id:'w1',name:'서민우',role:'팀장'},
