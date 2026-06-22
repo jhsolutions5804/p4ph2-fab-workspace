@@ -898,15 +898,18 @@ function renderCal(){
   }
   if(selectedKey){const[sy,sm]=selectedKey.split('-').map(Number);if(sm-1!==curMonth||sy!==curYear)hideDetail();else renderCalDetail(selectedKey);}
 }
+// 캘린더에서 제외할 태그 (회의는 캘린더에 표시 안 함)
+const CAL_EXCLUDE_TAGS=['meeting'];
+
 function renderCalDetail(key){
   const[y,m,d]=key.split('-').map(Number);
   const dows=['일','월','화','수','목','금','토'];
   const dow=dows[new Date(y,m-1,d).getDay()];
   const holidayName=HOLIDAYS[key]||'';
   document.getElementById('cal-detail-title').textContent=m+'월 '+d+'일('+dow+')'+(holidayName?' · '+holidayName:'');
-  const items=ALL_SCHEDULE[key]||[];
+  const items=(ALL_SCHEDULE[key]||[]).filter(i=>!CAL_EXCLUDE_TAGS.includes(i.tag));
   const dateObj=new Date(y,m-1,d);const dayOfWeek=dateObj.getDay();
-  const autoOff=(dayOfWeek===0||dayOfWeek===6||!!HOLIDAYS[key])&&!items.some(i=>i.tag==='off');
+  const autoOff=(dayOfWeek===0||dayOfWeek===6||!!HOLIDAYS[key])&&!(ALL_SCHEDULE[key]||[]).some(i=>i.tag==='off');
   const allItems=[...items];
   if(autoOff)allItems.unshift({time:null,text:'휴무'+(dayOfWeek===0?' (일요일)':dayOfWeek===6?' (토요일)':holidayName?' ('+holidayName+')':''),tag:'off',tagLabel:'휴무'});
   const leaves=getLeavesFromSchedule(key);
