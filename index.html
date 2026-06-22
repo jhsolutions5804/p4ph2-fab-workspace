@@ -619,25 +619,24 @@ function renderProgress(){
 }
 
 // ATTENDANCE
-const OFF_DAYS={
-  '2026-06-28':true,
-  '2026-07-04':true,
+// 직원 목록
+const MEMBERS=['이경택 소장','김종화 차장','윤석원 과장','정다애 대리','이한영 사원','김영서 사원'];
+
+// 휴가 데이터: {날짜: [{name, type}]}
+// type: 'annual'(연차) | 'half-am'(오전반차) | 'half-pm'(오후반차)
+const LEAVE_DATA={
+  // 예시: '2026-06-22':[{name:'이한영 사원',type:'half-am'}],
 };
-// 토요일은 당직 단일슬롯 (근무 처리)
-const SAT_DUTY='당직 08~15시 (김종화 차장)';
-const DUTY={
-  day:  '현장 이경택 소장 / 사무실 김종화 차장',
-  eve:  '현장 김종화 차장 / 사무실 정다애 대리',
-  night:'현장 윤석원 과장 / 사무실 김종화 차장',
-};
+
+const LEAVE_LABEL={'annual':'연차','half-am':'오전 반차','half-pm':'오후 반차'};
+const LEAVE_COLOR={'annual':'#c0392b','half-am':'#e67e22','half-pm':'#8e44ad'};
+const LEAVE_BG={'annual':'#ffeaea','half-am':'#fff3e0','half-pm':'#f3f0ff'};
 
 function renderAttend(){
   const now=new Date();now.setHours(0,0,0,0);
   const todayKey=toKey(now);
   const days=['일','월','화','수','목','금','토'];
-  const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
-  // 오늘 기준 -7 ~ +7 (총 15일)
   const list=[];
   for(let i=-7;i<=7;i++){
     const d=new Date(now);d.setDate(now.getDate()+i);list.push(d);
@@ -647,39 +646,35 @@ function renderAttend(){
   document.getElementById('att-range').textContent=
     (start.getMonth()+1)+'월 '+start.getDate()+'일 ~ '+(end.getMonth()+1)+'월 '+end.getDate()+'일';
 
-  const dow=list[0].getDay();
   const el=document.getElementById('att-list');
 
-  el.innerHTML=list.map(d=>{
+  // 휴가 있는 날만 표시, 없으면 빈 안내
+  const daysWithLeave=list.filter(d=>{ const k=toKey(d); return LEAVE_DATA[k]&&LEAVE_DATA[k].length>0; });
+
+  if(daysWithLeave.length===0){
+    el.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:40px 0">이 기간 내 휴가 신청이 없어요</div>';
+    return;
+  }
+
+  el.innerHTML=daysWithLeave.map(d=>{
     const key=toKey(d);
     const isToday=key===todayKey;
-    const isSun=d.getDay()===0;
-    const isSat=d.getDay()===6;
-    const isOff=OFF_DAYS[key]||isSun;
+    const leaves=LEAVE_DATA[key];
+    const dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
 
-    let statusLabel,dutyText,badgeClass,rowClass;
-    if(isOff){
-      statusLabel='휴무';dutyText='';badgeClass='att-badge-off';rowClass='off';
-    } else if(isSat){
-      statusLabel='근무';dutyText=SAT_DUTY;badgeClass='att-badge-work';rowClass='work';
-    } else {
-      statusLabel='근무';
-      dutyText='Day: '+DUTY.day+'<br>Eve: '+DUTY.eve+'<br>Night: '+DUTY.night;
-      badgeClass='att-badge-work';rowClass='work';
-    }
-    if(isToday)badgeClass='att-badge-today';
+    const leaveItems=leaves.map(l=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:13px;color:#1d1d1f;font-weight:500">${l.name}</span>
+        <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;background:${LEAVE_BG[l.type]};color:${LEAVE_COLOR[l.type]}">${LEAVE_LABEL[l.type]}</span>
+      </div>`).join('');
 
-    return`<div class="att-row ${rowClass}${isToday?' today-row':''}">
-      ${isToday?'<div class="att-today-marker"></div>':''}
-      <div class="att-date">
-        <div class="att-date-main">${(d.getMonth()+1)}/${d.getDate()}(${days[d.getDay()]})</div>
-        <div class="att-date-sub">${months[d.getMonth()]}</div>
+    return`<div style="background:${isToday?'#f0f6ff':'#f5f5f7'};border-radius:12px;padding:12px 14px;margin-bottom:10px;${isToday?'border:1.5px solid #1D5BA6':''}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        ${isToday?'<div style="width:6px;height:6px;border-radius:50%;background:#1D5BA6;flex-shrink:0"></div>':''}
+        <span style="font-size:13px;font-weight:600;color:${isToday?'#1D5BA6':'#1d1d1f'}">${dateLabel}</span>
+        <span style="font-size:11px;color:#86868b">${leaves.length}명</span>
       </div>
-      <div class="att-status">
-        <div class="att-status-label ${isOff?'off':'work'}">${statusLabel}</div>
-        ${dutyText?`<div class="att-duty">${dutyText}</div>`:''}
-      </div>
-      <span class="att-badge ${badgeClass}">${isToday?'오늘':statusLabel}</span>
+      <div>${leaveItems}</div>
     </div>`;
   }).join('');
 }
