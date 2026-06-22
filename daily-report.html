@@ -239,10 +239,9 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ALL_SCHEDULE, WORKERS, FIREBASE_CONFIG } from './data.js';
 
-// 이미 초기화된 앱이 있으면 재사용 (중복 초기화 방지)
 const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
 const db  = getFirestore(app);
 
@@ -385,26 +384,35 @@ function formatEqRange(eqs){
   return eqs.join(', ');
 }
 
-// ── 6. 출역 인원 자동 로드 ──
+// ── 6. 출역 인원 자동 로드 (onSnapshot — workspace와 동일 방식) ──
+let _workerUnsub = null;
 async function loadAttendance(){
   document.getElementById('att-loading').style.display='block';
   document.getElementById('st-att').textContent='';
+  // 이전 구독 해제
+  if(_workerUnsub){ _workerUnsub(); _workerUnsub=null; }
   try {
-    const ref  = doc(db, 'worker_attendance', selKey);
-    const snap = await getDoc(ref);
-    console.log('[출역] 문서 존재:', snap.exists(), '/ 날짜키:', selKey);
-    const checks = snap.exists() ? (snap.data().checks || []) : [];
-    console.log('[출역] checks:', checks);
-    document.getElementById('headcount').textContent = checks.length;
-    document.getElementById('worker-hint').textContent = `전체 ${WORKERS.length}명 중 출역 ${checks.length}명`;
-    document.getElementById('st-att').textContent = `✓ ${checks.length}명 확인`;
-    document.getElementById('st-att').className = 'load-status ok';
+    const ref = doc(db, 'worker_attendance', selKey);
+    _workerUnsub = onSnapshot(ref, snap => {
+      const checks = snap.exists() ? (snap.data().checks || []) : [];
+      console.log('[출역] onSnapshot — 문서 존재:', snap.exists(), '/ checks:', checks);
+      document.getElementById('headcount').textContent = checks.length;
+      document.getElementById('worker-hint').textContent = `전체 ${WORKERS.length}명 중 출역 ${checks.length}명`;
+      document.getElementById('st-att').textContent = `✓ ${checks.length}명 확인`;
+      document.getElementById('st-att').className = 'load-status ok';
+      document.getElementById('att-loading').style.display='none';
+    }, err => {
+      console.error('[출역] onSnapshot 오류:', err.code, err.message);
+      document.getElementById('st-att').textContent = `오류: ${err.code||err.message}`;
+      document.getElementById('st-att').className = 'load-status err';
+      document.getElementById('att-loading').style.display='none';
+    });
   } catch(e) {
-    console.error('[출역] Firebase 오류:', e.code, e.message);
-    document.getElementById('st-att').textContent = `Firebase 오류: ${e.code||e.message}`;
+    console.error('[출역] 초기화 오류:', e);
+    document.getElementById('st-att').textContent = `오류: ${e.message}`;
     document.getElementById('st-att').className = 'load-status err';
+    document.getElementById('att-loading').style.display='none';
   }
-  document.getElementById('att-loading').style.display='none';
 }
 
 // ── 인원 수동 조정 ──
