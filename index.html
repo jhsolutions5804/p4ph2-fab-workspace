@@ -1459,8 +1459,7 @@ window._fbSubscribeWorker = async function(dateKey) {
     if(window._renderWorkerUI) window._renderWorkerUI();
   }, err => {
     console.error('출역 구독 오류:', err);
-    window._workerCache[dateKey] = JSON.parse(localStorage.getItem('worker_ck_'+dateKey)||'[]');
-    if(window._renderWorkerUI) window._renderWorkerUI();
+    // localStorage fallback 제거 — Firebase 데이터만 사용
   });
 };
 
