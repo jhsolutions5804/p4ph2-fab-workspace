@@ -153,7 +153,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
     </div>
     <div class="tab-bar">
       <button class="tab active" onclick="switchTab('today',this)">오늘</button>
-      <button class="tab" onclick="switchTab('twoweek',this)">2주</button>
+      <button class="tab" onclick="switchTab('twoweek',this)">주간</button>
       <button class="tab" onclick="switchTab('calendar',this)">캘린더</button>
       <button class="tab" onclick="switchTab('attend',this)">근태</button>
       <button class="tab" onclick="switchTab('progress',this)">공정</button>
@@ -826,21 +826,91 @@ function updateProgress(){
 }
 function getWeekNum(d){const j=new Date(d.getFullYear(),0,1);return Math.ceil(((d-j)/86400000+j.getDay()+1)/7);}
 
-// ===== TWO WEEK =====
+// ===== 주간 (W+0, W+1) =====
+function getWeekStart(d){
+  // 해당 주의 월요일 반환
+  const day=d.getDay(); // 0=일 1=월 ... 6=토
+  const diff=day===0?-6:1-day; // 일요일이면 -6, 나머지는 월요일 방향
+  const mon=new Date(d);mon.setDate(d.getDate()+diff);mon.setHours(0,0,0,0);
+  return mon;
+}
+
 function renderTwoWeek(){
   const el=document.getElementById('tab-twoweek');
-  const now=getAppToday();const dates=[];
-  for(let i=0;i<14;i++){const d=new Date(now);d.setDate(now.getDate()+i);dates.push(d);}
+  const now=getAppToday();
   const days=['일','월','화','수','목','금','토'];
-  el.innerHTML=dates.map(d=>{
-    const key=toKey(d);const items=ALL_SCHEDULE[key]||[];if(!items.length)return'';
-    const timed=items.filter(i=>i.time);const notimed=items.filter(i=>!i.time);
-    const wn=getWeekNum(d);
-    const label=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+') · W'+wn;
-    const mkRow=i=>`<div class="week-item"><span class="week-time">${i.time||'—'}</span><span class="week-text">${i.text}</span><span class="week-tag tag-${i.tag}">${i.tagLabel}</span></div>`;
-    return`<div class="week-day"><div class="week-day-label">${label}</div>${timed.map(mkRow).join('')}${notimed.length?`<div class="week-divider"></div>${notimed.map(mkRow).join('')}`:''}</div>`;
-  }).join('');
-  if(!el.innerHTML.trim())el.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">2주 내 등록된 일정이 없어요</div>';
+
+  // W+0 시작(이번 주 월요일), W+1 시작(다음 주 월요일)
+  const w0Start=getWeekStart(now);
+  const w1Start=new Date(w0Start);w1Start.setDate(w0Start.getDate()+7);
+
+  // 두 주 날짜 배열 생성 (월~일 각 7일)
+  const weeks=[
+    {start:w0Start, label:'W'+getWeekNum(w0Start)+' · 이번 주', dates:[]},
+    {start:w1Start, label:'W'+getWeekNum(w1Start)+' · 다음 주', dates:[]},
+  ];
+  weeks.forEach(w=>{
+    for(let i=0;i<7;i++){const d=new Date(w.start);d.setDate(w.start.getDate()+i);w.dates.push(d);}
+  });
+
+  const mkRow=i=>`<div class="week-item"><span class="week-time">${i.time||'—'}</span><span class="week-text">${i.text}</span><span class="week-tag tag-${i.tag}">${i.tagLabel}</span></div>`;
+
+  let html='';
+  weeks.forEach(w=>{
+    // 주 헤더
+    const wStartFmt=(w.start.getMonth()+1)+'/'+w.start.getDate();
+    const wEnd=w.dates[6];
+    const wEndFmt=(wEnd.getMonth()+1)+'/'+wEnd.getDate();
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:4px">
+      <span style="font-size:13px;font-weight:700;color:#1D5BA6">${w.label}</span>
+      <span style="font-size:11px;color:#86868b">${wStartFmt} ~ ${wEndFmt}</span>
+    </div>`;
+
+    let hasAny=false;
+    w.dates.forEach(d=>{
+      const key=toKey(d);
+      const items=ALL_SCHEDULE[key]||[];
+      const dow=d.getDay();
+      const isOff=(dow===0||dow===6||!!HOLIDAYS[key])&&!items.some(i=>i.tag==='off');
+      const isToday=toKey(now)===key;
+
+      // 날짜 라벨
+      const dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[dow]+')';
+      const holidayStr=HOLIDAYS[key]?' · '+HOLIDAYS[key]:'';
+      const isOffAll=dow===0||dow===6||!!HOLIDAYS[key]||items.some(i=>i.tag==='off');
+
+      if(!items.length&&!isOffAll)return; // 일정·휴무 모두 없으면 스킵
+
+      const labelColor=isToday?'#1D5BA6':isOffAll?'#c0392b':'#86868b';
+      const bgColor=isToday?'background:#f0f6ff;border:1.5px solid #1D5BA6;':'';
+
+      const timed=items.filter(i=>i.time);
+      const notimed=items.filter(i=>!i.time);
+
+      // 휴무 자동 추가
+      const displayItems=[...items];
+      if(isOff)displayItems.unshift({time:null,text:'휴무'+(HOLIDAYS[key]?' ('+HOLIDAYS[key]+')':dow===0?' (일요일)':' (토요일)'),tag:'off',tagLabel:'휴무'});
+      const timedD=displayItems.filter(i=>i.time);
+      const notimedD=displayItems.filter(i=>!i.time);
+
+      html+=`<div style="margin-bottom:10px;border-radius:10px;overflow:hidden;${bgColor}">
+        <div style="padding:6px 13px 4px;display:flex;align-items:center;gap:6px">
+          ${isToday?'<div style="width:5px;height:5px;border-radius:50%;background:#1D5BA6;flex-shrink:0"></div>':''}
+          <span style="font-size:11px;font-weight:700;color:${labelColor}">${dateLabel}${holidayStr}</span>
+        </div>
+        <div style="padding:0 4px 6px">
+          ${timedD.map(mkRow).join('')}
+          ${notimedD.length?`<div class="week-divider"></div>${notimedD.map(mkRow).join('')}`:''}
+        </div>
+      </div>`;
+      hasAny=true;
+    });
+
+    if(!hasAny)html+='<div style="text-align:center;color:#86868b;font-size:13px;padding:16px 0">등록된 일정이 없어요</div>';
+    html+='<div style="height:1px;background:#e5e5e5;margin:16px 0"></div>';
+  });
+
+  el.innerHTML=html;
 }
 
 // ===== CALENDAR =====
