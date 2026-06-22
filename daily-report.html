@@ -169,9 +169,9 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
     <textarea id="tomorrowWork" placeholder="예) FCU 설치 (815~819호기, 5대)&#10;E/V #13 사용 (23:00~01:00)"></textarea>
   </div>
 
-  <!-- 6. 투입 인원 현황 — 날짜 선택 시 자동 로드 -->
+  <!-- 6. 기술인 투입 현황 — 날짜 선택 시 자동 로드 -->
   <div class="card">
-    <div class="card-label"><span class="num">6</span> 투입 인원 현황</div>
+    <div class="card-label"><span class="num">6</span> 기술인 투입 현황</div>
     <div id="att-loading" style="display:none">
       <div class="loading-badge"><span class="spin">⟳</span> 출역 현황 불러오는 중...</div>
     </div>
@@ -238,11 +238,12 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 <div id="printArea" style="display:none;"></div>
 
 <script type="module">
-import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ALL_SCHEDULE, WORKERS, FIREBASE_CONFIG } from './data.js';
 
-const app = initializeApp(FIREBASE_CONFIG);
+// 이미 초기화된 앱이 있으면 재사용 (중복 초기화 방지)
+const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
 const db  = getFirestore(app);
 
 // 구역 정의
@@ -387,16 +388,21 @@ function formatEqRange(eqs){
 // ── 6. 출역 인원 자동 로드 ──
 async function loadAttendance(){
   document.getElementById('att-loading').style.display='block';
+  document.getElementById('st-att').textContent='';
   try {
-    const snap = await getDoc(doc(db,'worker_attendance',selKey));
-    const checks = snap.exists() ? (snap.data().checks||[]) : [];
-    document.getElementById('headcount').textContent=checks.length;
-    document.getElementById('worker-hint').textContent=`전체 ${WORKERS.length}명 중 출역 ${checks.length}명`;
-    document.getElementById('st-att').textContent=`✓ ${checks.length}명 확인`;
-    document.getElementById('st-att').className='load-status ok';
+    const ref  = doc(db, 'worker_attendance', selKey);
+    const snap = await getDoc(ref);
+    console.log('[출역] 문서 존재:', snap.exists(), '/ 날짜키:', selKey);
+    const checks = snap.exists() ? (snap.data().checks || []) : [];
+    console.log('[출역] checks:', checks);
+    document.getElementById('headcount').textContent = checks.length;
+    document.getElementById('worker-hint').textContent = `전체 ${WORKERS.length}명 중 출역 ${checks.length}명`;
+    document.getElementById('st-att').textContent = `✓ ${checks.length}명 확인`;
+    document.getElementById('st-att').className = 'load-status ok';
   } catch(e) {
-    document.getElementById('st-att').textContent='Firebase 오류 — 수동 입력해 주세요';
-    document.getElementById('st-att').className='load-status err';
+    console.error('[출역] Firebase 오류:', e.code, e.message);
+    document.getElementById('st-att').textContent = `Firebase 오류: ${e.code||e.message}`;
+    document.getElementById('st-att').className = 'load-status err';
   }
   document.getElementById('att-loading').style.display='none';
 }
@@ -442,7 +448,7 @@ function buildDoc(d){
       <tr><th>금일 작업</th><td style="white-space:pre-wrap">${d.today||'—'}</td></tr>
       <tr><th>명일 예정</th><td style="white-space:pre-wrap">${d.tomorrow||'—'}</td></tr>
       <tr class="sec-hd"><td colspan="2">▸ 투입 현황</td></tr>
-      <tr><th>투입 인원</th><td>${d.count}명 (전체 근로자 중 출역 ${d.count}명)</td></tr>
+      <tr><th>기술인 투입</th><td>${d.count}명 (전체 근로자 중 출역 ${d.count}명)</td></tr>
       <tr><th>사용 장비</th><td>${d.equip}</td></tr>
       <tr class="sec-hd"><td colspan="2">▸ 기타</td></tr>
       <tr><th>특이사항</th><td style="white-space:pre-wrap">${d.remarks||'—'}</td></tr>
