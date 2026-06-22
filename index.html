@@ -295,6 +295,14 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         <span class="legend-item"><span class="legend-dot" style="background:#7c3aed"></span>시공검측</span>
       </div>
       <div id="zone-list"></div>
+
+      <!-- PPT 생성 버튼 -->
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e5e5">
+        <button id="ppt-btn" onclick="generateProgressPPT()" style="width:100%;padding:14px;background:#1D5BA6;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">
+          📊 공정표 PPT 생성 · 다운로드
+        </button>
+        <div id="ppt-status" style="font-size:11px;color:#86868b;text-align:center;margin-top:8px;display:none"></div>
+      </div>
     </div>
 
   </div>
@@ -565,28 +573,59 @@ function getDailyNewChecks(dateKey, zoneId) {
 }
 
 let _progUnsubMap = {};
+// 날짜별 Firebase 체크 캐시 (누적용)
+window._progCache = window._progCache || {};
+
+// 특정 날짜의 Firebase 체크 1회 로드 (과거 날짜용)
+async function loadFirebaseDayChecks(dateKey, zoneId) {
+  try {
+    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const ref = doc(db, 'progress_checks_'+dateKey, zoneId);
+    const snap = await getDoc(ref);
+    return snap.exists() ? (snap.data().checks || {}) : {};
+  } catch(e) { return {}; }
+}
 
 // 날짜별 공정 체크 구독
 window._fbSubscribeProgress = async function(dateKey) {
   Object.values(_progUnsubMap).forEach(fn => fn && fn());
   _progUnsubMap = {};
 
-  // 과거 고정 데이터는 Firebase 구독 불필요
-  if (dateKey <= PAST_DATES[PAST_DATES.length - 1]) {
-    if (window._renderProgressUI) window._renderProgressUI();
-    return;
-  }
-
-  // 오늘/미래는 Firebase 실시간 구독
-  const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const ZONE_IDS = ['fiz','xob','c3','c4','wob','mfr'];
   window._progCache = window._progCache || {};
   window._progCache[dateKey] = window._progCache[dateKey] || {};
 
+  const ZONE_IDS = ['fiz','xob','c3','c4','wob','mfr'];
+
+  // 과거 고정 데이터(PAST_DATES) 이후 날짜들 중 dateKey 이전 날짜들도 Firebase에서 로드
+  const pad = n=>String(n).padStart(2,'0');
+  function prevDays(key, count) {
+    const days=[];
+    const d=new Date(key+'T12:00:00');
+    for(let i=1;i<=count;i++){
+      const p=new Date(d); p.setDate(d.getDate()-i);
+      const pk=p.getFullYear()+'-'+pad(p.getMonth()+1)+'-'+pad(p.getDate());
+      if(pk>PAST_DATES[PAST_DATES.length-1]) days.push(pk);
+      else break;
+    }
+    return days;
+  }
+
+  // dateKey 이전 날짜들의 Firebase 데이터 미리 로드 (최대 30일)
+  const prevDateKeys = prevDays(dateKey, 30);
+  for(const pk of prevDateKeys){
+    if(!window._progCache[pk]) window._progCache[pk]={};
+    for(const zid of ZONE_IDS){
+      if(window._progCache[pk][zid] === undefined){
+        window._progCache[pk][zid] = await loadFirebaseDayChecks(pk, zid);
+      }
+    }
+  }
+
+  // 현재 날짜 실시간 구독
+  const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   ZONE_IDS.forEach(zid => {
     const ref = doc(db, 'progress_checks_'+dateKey, zid);
     _progUnsubMap[zid] = onSnapshot(ref, snap => {
-      window._progCache[dateKey] = window._progCache[dateKey] || {};
       window._progCache[dateKey][zid] = snap.exists() ? (snap.data().checks || {}) : {};
       if (window._renderProgressUI) window._renderProgressUI();
     });
@@ -615,13 +654,22 @@ window._fbSetProgCheck = async function(dateKey, zoneId, key, isDone) {
   }
 };
 
-// 공정 체크 읽기 — 누적 병합 반환
-// returns { merged: {전체누적}, todayOnly: {오늘신규} }
+// 공정 체크 읽기 — PAST_DAILY + Firebase 캐시 누적 병합
 window._fbGetProgChecks = function(dateKey, zoneId) {
-  // 과거 날짜까지 누적
+  // 1. PAST_DAILY 누적 (코드 내 고정 데이터)
   const pastMerged = getCumulativeChecks(dateKey, zoneId);
 
-  // 오늘 Firebase/localStorage 신규 체크
+  // 2. Firebase 캐시에서 dateKey 이전 날짜들 누적
+  const fbMerged = {};
+  if(window._progCache) {
+    Object.keys(window._progCache).sort().forEach(dk => {
+      if(dk < dateKey && window._progCache[dk][zoneId]) {
+        Object.assign(fbMerged, window._progCache[dk][zoneId]);
+      }
+    });
+  }
+
+  // 3. 오늘 Firebase/localStorage 신규 체크
   let todayOnly = {};
   if (window._progCache && window._progCache[dateKey] && window._progCache[dateKey][zoneId] !== undefined) {
     todayOnly = window._progCache[dateKey][zoneId];
@@ -629,9 +677,11 @@ window._fbGetProgChecks = function(dateKey, zoneId) {
     try { todayOnly = JSON.parse(localStorage.getItem('eq_ck_'+dateKey+'_'+zoneId)||'{}'); } catch(e) {}
   }
 
-  // 최종 병합 (과거 + 오늘)
-  const merged = Object.assign({}, pastMerged, todayOnly);
-  return { merged, todayOnly, pastOnly: pastMerged };
+  // 최종 병합: 고정 과거 + Firebase 과거 + 오늘
+  const merged = Object.assign({}, pastMerged, fbMerged, todayOnly);
+  // pastOnly = 고정 과거 + Firebase 과거 (오늘 제외)
+  const pastOnly = Object.assign({}, pastMerged, fbMerged);
+  return { merged, todayOnly, pastOnly };
 };
 
 </script>
@@ -1409,5 +1459,219 @@ document.getElementById('report-input').addEventListener('keydown',e=>{
   }catch(e){}
 })();
 </script>
-</body>
-</html>
+
+<!-- PptxGenJS -->
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script>
+// ===== PPT 생성 =====
+window.generateProgressPPT = async function() {
+  const btn = document.getElementById('ppt-btn');
+  const status = document.getElementById('ppt-status');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ 데이터 불러오는 중...';
+  status.style.display = 'block';
+  status.textContent = 'Firebase에서 공정 데이터 읽는 중...';
+
+  try {
+    const viewDate = getProgDate();
+    const dateKey  = toKey(viewDate);
+    const days = ['일','월','화','수','목','금','토'];
+    const dayName = days[viewDate.getDay()];
+    const dateStr = viewDate.getFullYear()+'. '+(viewDate.getMonth()+1)+'. '+viewDate.getDate();
+
+    // 전일 키
+    const prevDate = new Date(viewDate); prevDate.setDate(viewDate.getDate()-1);
+    const prevKey  = toKey(prevDate);
+    const prevStr  = prevDate.getFullYear()+'. '+(prevDate.getMonth()+1)+'. '+prevDate.getDate();
+
+    // 현재 날짜 공정 수치 수집
+    const todayStats = ZONES.map(z => {
+      const cksObj = getCksProg(z.id);
+      const r = calcZone(z, cksObj);
+      return { name:z.name, total:z.total, ...r,
+        반입:r.zIn, 입고검사:r.zAn, instDone:r.instDone, 시공검측:r.zChk };
+    });
+
+    // 전일 수치 수집 (캐시에서)
+    const prevStats = ZONES.map(z => {
+      const prevCksObj = window._fbGetProgChecks
+        ? window._fbGetProgChecks(prevKey, z.id)
+        : { merged:{}, todayOnly:{}, pastOnly:{} };
+      const r = calcZone(z, prevCksObj);
+      return { 반입:r.zIn, 입고검사:r.zAn, instDone:r.instDone, 시공검측:r.zChk, pct:r.pct };
+    });
+
+    // 전체 수치
+    const grandChecked = todayStats.reduce((s,z)=>s+z.totalChecked,0);
+    const grandMax     = todayStats.reduce((s,z)=>s+z.mx,0);
+    const TOTAL_PCT    = (grandChecked/grandMax*100).toFixed(1);
+    const TOTAL_QTY    = 183;
+    const TOTAL_IN     = todayStats.reduce((s,z)=>s+z.반입,0);
+    const TOTAL_INST   = todayStats.reduce((s,z)=>s+z.instDone,0);
+
+    const prevChecked = prevStats.reduce((s,z)=>{
+      const zo=ZONES.find(zz=>zz.name===todayStats[prevStats.indexOf(z)]?.name||false);
+      return s;
+    },0);
+    const prevGrandIn   = prevStats.reduce((s,z)=>s+z.반입,0);
+    const prevGrandInst = prevStats.reduce((s,z)=>s+z.instDone,0);
+    // 전일 공정율 계산
+    const prevTotalChecked = ZONES.reduce((s,z,i)=>{
+      const pr = prevStats[i];
+      const instC = Math.round((pr.instDone/z.total)*(z.total*INSTALL_COLS.length));
+      return s + pr.반입 + pr.입고검사 + instC + pr.시공검측;
+    },0);
+    const PREV_PCT  = (prevTotalChecked/grandMax*100).toFixed(1);
+    const DIFF_PCT  = (parseFloat(TOTAL_PCT)-parseFloat(PREV_PCT)).toFixed(1);
+
+    status.textContent = 'PPT 생성 중...';
+
+    // ===== 색상 =====
+    const C = {
+      blue:'1D5BA6', orange:'F7941D',
+      white:'FFFFFF', gray1:'F1F5F9', gray2:'E2E8F0', gray3:'94A3B8',
+      text:'1E293B', sub:'64748B',
+      barBlue:'1D5BA6', barLblue:'5BA4CF', barGreen:'16A34A', barPurple:'7C3AED',
+      upGreen:'16A34A', downRed:'DC2626',
+    };
+    const mkShadow = ()=>({type:'outer',color:'000000',blur:6,offset:2,angle:45,opacity:0.07});
+
+    // 로고 base64 (인라인 — 네트워크 로드 대신 빈 공간으로)
+    const pres = new PptxGenJS();
+    pres.layout = 'LAYOUT_WIDE';
+
+    // =====================================================
+    // 슬라이드 1: 갑지
+    // =====================================================
+    {
+      const s = pres.addSlide();
+      s.background = {color:C.white};
+
+      s.addText('귀뚜라미 범양냉방', {x:0.6,y:0.3,w:9,h:0.45,fontSize:13,fontFace:'Calibri',color:C.sub});
+      s.addText('P4 Ph2 (FAB)', {x:0.6,y:1.35,w:12,h:0.65,fontSize:24,fontFace:'Calibri',color:C.sub});
+      s.addText('FCU 설치 공정 진행율', {x:0.6,y:1.95,w:12,h:1.05,fontSize:44,fontFace:'Calibri',color:C.text,bold:true});
+
+      // 구분선 (회색+오렌지 같은 y)
+      s.addShape(pres.shapes.RECTANGLE,{x:0.6,y:3.15,w:12.1,h:0.05,fill:{color:C.gray2},line:{color:C.gray2}});
+      s.addShape(pres.shapes.RECTANGLE,{x:0.6,y:3.15,w:1.2,h:0.05,fill:{color:C.orange},line:{color:C.orange}});
+
+      s.addText(`기준일 : ${dateStr}`,{x:0.6,y:3.45,w:7,h:0.38,fontSize:12,fontFace:'Calibri',color:C.sub});
+
+      // 카드 4개
+      const cards=[
+        {label:'전체 물량',  val:`${TOTAL_QTY}대`,  color:C.text,       bg:C.gray1},
+        {label:'전체 공정율',val:`${TOTAL_PCT}%`,   color:C.blue,       bg:'EAF7FC'},
+        {label:'누적 반입',  val:`${TOTAL_IN}대`,   color:C.barBlue,    bg:C.gray1},
+        {label:'누적 설치',  val:`${TOTAL_INST}대`, color:C.barGreen,   bg:C.gray1},
+      ];
+      const cW=2.75,cH=1.3,cY=3.98,gap=0.22;
+      const startX=(13.3-(cW*4+gap*3))/2;
+      cards.forEach((c,i)=>{
+        const cx=startX+i*(cW+gap);
+        s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:cx,y:cY,w:cW,h:cH,fill:{color:c.bg},line:{color:C.gray2,pt:1},rectRadius:0.12,shadow:mkShadow()});
+        s.addText(c.val,{x:cx,y:cY+0.22,w:cW,h:0.6,fontSize:28,fontFace:'Calibri',color:c.color,bold:true,align:'center',valign:'middle'});
+        s.addText(c.label,{x:cx,y:cY+0.88,w:cW,h:0.28,fontSize:11,fontFace:'Calibri',color:C.sub,align:'center'});
+      });
+
+      // 전일 대비
+      const dn=parseFloat(DIFF_PCT);
+      const dc=dn>0?C.upGreen:dn<0?C.downRed:C.gray3;
+      const dm=dn>0?'▲':dn<0?'▼':'±';
+      s.addText(`전일(${prevStr}) 대비  ${dm} ${DIFF_PCT}%`,{
+        x:0.6,y:cY+cH+0.28,w:12,h:0.4,fontSize:13,fontFace:'Calibri',color:dc,bold:dn!==0,
+      });
+    }
+
+    // =====================================================
+    // 슬라이드 2: 속지
+    // =====================================================
+    {
+      const s = pres.addSlide();
+      s.background = {color:C.white};
+
+      // 헤더 (흰색 배경, 파란 포인트 라인)
+      s.addText('공정 진행 현황',{x:0.45,y:0,w:7,h:0.82,fontSize:19,fontFace:'Calibri',color:C.text,bold:true,valign:'middle'});
+      s.addText(`기준일 : ${dateStr}`,{x:7.5,y:0,w:3.5,h:0.82,fontSize:11,fontFace:'Calibri',color:C.sub,align:'right',valign:'middle'});
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:0.82,w:13.3,h:0.03,fill:{color:C.gray2},line:{color:C.gray2}});
+      s.addShape(pres.shapes.RECTANGLE,{x:0.4,y:0.82,w:1.5,h:0.03,fill:{color:C.blue},line:{color:C.blue}});
+
+      // 상단 요약 카드
+      const M=0.35, CW=12.6;
+      const sy=1.0;
+      s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:M,y:sy,w:CW,h:1.55,fill:{color:C.white},line:{color:C.gray2,pt:1},rectRadius:0.14,shadow:mkShadow()});
+      s.addText(`${viewDate.getMonth()+1}월 ${viewDate.getDate()}일(${dayName})`,{x:M+0.2,y:sy+0.1,w:CW-0.4,h:0.36,fontSize:14,fontFace:'Calibri',color:C.text,bold:true,align:'center'});
+      s.addText('W'+getWeekNum(viewDate)+' · '+( isProgToday()?'오늘':'조회일'),{x:M+0.2,y:sy+0.44,w:CW-0.4,h:0.24,fontSize:10,fontFace:'Calibri',color:C.sub,align:'center'});
+      s.addShape(pres.shapes.RECTANGLE,{x:M+0.2,y:sy+0.72,w:CW-0.4,h:0.01,fill:{color:C.gray2},line:{color:C.gray2}});
+      const siW=CW/4;
+      [{label:'전체 물량',val:`${TOTAL_QTY}대`,color:C.text},{label:'전체 공정율',val:`${TOTAL_PCT}%`,color:C.blue},{label:'누적 반입',val:`${TOTAL_IN}대`,color:C.text},{label:'누적 설치',val:`${TOTAL_INST}대`,color:C.text}].forEach((item,i)=>{
+        const ix=M+i*siW;
+        s.addText(item.label,{x:ix,y:sy+0.75,w:siW,h:0.28,fontSize:10,fontFace:'Calibri',color:C.sub,align:'center'});
+        s.addText(item.val,{x:ix,y:sy+1.0,w:siW,h:0.42,fontSize:20,fontFace:'Calibri',color:item.color,bold:true,align:'center'});
+      });
+
+      // 범례
+      [{color:C.barBlue,l:'반입'},{color:C.barLblue,l:'입고검사'},{color:C.barGreen,l:'설치'},{color:C.barPurple,l:'시공검측'}].forEach((lg,i)=>{
+        const lx=M+i*1.85;
+        s.addShape(pres.shapes.OVAL,{x:lx,y:2.77,w:0.14,h:0.14,fill:{color:lg.color},line:{color:lg.color}});
+        s.addText(lg.l,{x:lx+0.2,y:2.7,w:1.5,h:0.3,fontSize:10,fontFace:'Calibri',color:C.sub});
+      });
+
+      // 섹터 카드 3열×2행
+      const zW=(12.6-0.2*2)/3, zH=1.95, zGX=0.2, zGY=0.18;
+      todayStats.forEach((z,i)=>{
+        const prev=prevStats[i];
+        const col=i%3, row=Math.floor(i/3);
+        const cx=M+col*(zW+zGX), cy=3.1+row*(zH+zGY);
+        const pctNum=parseFloat(z.pct);
+        const diffP=(pctNum-parseFloat(prev.pct||'0')).toFixed(1);
+        const dn2=parseFloat(diffP);
+
+        s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:cx,y:cy,w:zW,h:zH,fill:{color:C.white},line:{color:C.gray2,pt:1},rectRadius:0.12,shadow:mkShadow()});
+        s.addText(z.name,{x:cx+0.16,y:cy+0.12,w:1.9,h:0.34,fontSize:13,fontFace:'Calibri',color:C.text,bold:true});
+        s.addText(`${z.total}대`,{x:cx+1.9,y:cy+0.12,w:0.55,h:0.34,fontSize:10,fontFace:'Calibri',color:C.sub,align:'right'});
+
+        const pillW=0.75,dW=0.48,re=cx+zW-0.16;
+        const dx=re-dW, px=dx-0.05-pillW;
+        s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:px,y:cy+0.13,w:pillW,h:0.32,fill:{color:pctNum>0?'E8F0FB':C.gray1},line:{color:pctNum>0?'C5D8F5':C.gray2,pt:1},rectRadius:0.16});
+        s.addText(`${z.pct}%`,{x:px,y:cy+0.13,w:pillW,h:0.32,fontSize:11,fontFace:'Calibri',color:pctNum>0?C.blue:C.gray3,bold:true,align:'center',valign:'middle'});
+        if(dn2!==0){
+          s.addText(`${dn2>0?'▲':'▼'}${Math.abs(dn2)}%`,{x:dx,y:cy+0.13,w:dW,h:0.32,fontSize:8,fontFace:'Calibri',color:dn2>0?C.upGreen:C.downRed,bold:true,valign:'middle',wrap:false});
+        }
+
+        const PAD=0.14, barMaxW=zW-PAD*2, barTrackX=cx+PAD, barH=0.09, barUnit=(zH-0.58)/4;
+        const barDefs=[
+          {label:'반입',     cnt:`${z.반입}/${z.total}`,    val:z.반입,    barPct:z.total>0?z.반입/z.total*100:0,       prevVal:prev.반입,    color:C.barBlue},
+          {label:'입고검사', cnt:`${z.입고검사}/${z.total}`, val:z.입고검사,barPct:z.total>0?z.입고검사/z.total*100:0,  prevVal:prev.입고검사,color:C.barLblue},
+          {label:'설치',     cnt:`${z.instDone}/${z.total}`,val:z.instDone,barPct:z.instBarPct||0,                     prevVal:prev.instDone,color:C.barGreen},
+          {label:'시공검측', cnt:`${z.시공검측}/${z.total}`, val:z.시공검측,barPct:z.total>0?z.시공검측/z.total*100:0, prevVal:prev.시공검측,color:C.barPurple},
+        ];
+        barDefs.forEach((b,bi)=>{
+          const by=cy+0.58+bi*barUnit;
+          const fw=Math.max(b.barPct/100*barMaxW,0);
+          const diff=b.val-b.prevVal;
+          s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:barTrackX,y:by,w:barMaxW,h:barH,fill:{color:C.gray2},line:{color:C.gray2},rectRadius:0.04});
+          if(fw>0.01)s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:barTrackX,y:by,w:fw,h:barH,fill:{color:b.color},line:{color:b.color},rectRadius:0.04});
+          s.addText(`${b.label}  ${b.cnt}`,{x:barTrackX,y:by+barH+0.02,w:barMaxW*0.72,h:0.18,fontSize:8,fontFace:'Calibri',color:C.sub});
+          if(diff!==0)s.addText(`${diff>0?'+':''}${diff}`,{x:barTrackX+barMaxW*0.72,y:by+barH+0.02,w:barMaxW*0.28,h:0.18,fontSize:8,fontFace:'Calibri',color:diff>0?C.upGreen:C.downRed,bold:true,align:'right'});
+        });
+      });
+    }
+
+    // 다운로드
+    const y=viewDate.getFullYear(), m=pad(viewDate.getMonth()+1), d=pad(viewDate.getDate());
+    const fileName = `${y}${m}${d}_귀뚜라미범양냉방_공정진행율.pptx`;
+    await pres.writeFile({fileName});
+
+    btn.innerHTML = '📊 공정표 PPT 생성 · 다운로드';
+    btn.disabled = false;
+    status.textContent = `✅ "${fileName}" 다운로드 완료!`;
+    setTimeout(()=>{status.style.display='none';},4000);
+
+  } catch(e) {
+    console.error(e);
+    btn.innerHTML = '📊 공정표 PPT 생성 · 다운로드';
+    btn.disabled = false;
+    status.textContent = '❌ 오류: '+e.message;
+  }
+};
+</script>
