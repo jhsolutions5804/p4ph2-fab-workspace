@@ -242,10 +242,10 @@ import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebase
 import { getFirestore, collection, getDocs, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ALL_SCHEDULE, WORKERS, FIREBASE_CONFIG } from './data.js';
 
-// 중복 초기화 방지 — 앱 이름 'daily-report' 으로 별도 등록
+// default 앱으로 초기화 — workspace와 동일한 인스턴스 사용
 let app;
-try { app = getApp('daily-report'); }
-catch(e) { app = initializeApp(FIREBASE_CONFIG, 'daily-report'); }
+try { app = getApp(); }
+catch(e) { app = initializeApp(FIREBASE_CONFIG); }
 const db = getFirestore(app);
 
 // 구역 정의
@@ -388,37 +388,27 @@ function formatEqRange(eqs){
 }
 
 // ── 6. 출역 인원 자동 로드 ──
-// window._fbDb: workspace(index.html)가 초기화한 Firestore 인스턴스 재사용
-// 없으면 별도 초기화한 db 사용
 let _workerUnsub = null;
 async function loadAttendance(){
   document.getElementById('att-loading').style.display='block';
   document.getElementById('st-att').textContent='';
   if(_workerUnsub){ _workerUnsub(); _workerUnsub=null; }
-
-  // workspace가 window._fbDb를 노출해 놓으므로 우선 재사용
-  const fireDb = window._fbDb || db;
-
   try {
-    const { doc: fbDoc, onSnapshot: fbSnap } =
+    const { doc: fbDoc, onSnapshot } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const ref = fbDoc(fireDb, 'worker_attendance', selKey);
-    _workerUnsub = fbSnap(ref, snap => {
-      const checks = snap.exists() ? (snap.data().checks || []) : [];
+    _workerUnsub = onSnapshot(fbDoc(db,'worker_attendance',selKey), snap => {
+      const checks = snap.exists() ? (snap.data().checks||[]) : [];
       document.getElementById('headcount').textContent = checks.length;
-      document.getElementById('worker-hint').textContent =
-        `전체 ${WORKERS.length}명 중 출역 ${checks.length}명`;
+      document.getElementById('worker-hint').textContent = `전체 ${WORKERS.length}명 중 출역 ${checks.length}명`;
       document.getElementById('st-att').textContent = `✓ ${checks.length}명 확인`;
       document.getElementById('st-att').className = 'load-status ok';
       document.getElementById('att-loading').style.display='none';
     }, err => {
-      console.error('[출역] 오류:', err.code, err.message);
       document.getElementById('st-att').textContent = `오류: ${err.code}`;
       document.getElementById('st-att').className = 'load-status err';
       document.getElementById('att-loading').style.display='none';
     });
   } catch(e) {
-    console.error('[출역] catch:', e);
     document.getElementById('st-att').textContent = `오류: ${e.message}`;
     document.getElementById('st-att').className = 'load-status err';
     document.getElementById('att-loading').style.display='none';
