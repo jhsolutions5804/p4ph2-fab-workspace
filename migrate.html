@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><title>출역 데이터 마이그레이션</title>
+<style>
+body{font-family:-apple-system,sans-serif;padding:24px;background:#f0f4fa;max-width:480px;margin:0 auto}
+h2{color:#1D5BA6;margin-bottom:16px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ok{color:#2e7d32;font-weight:700}
+.err{color:#c0392b;font-weight:700}
+.pending{color:#888}
+p{font-size:14px;margin:6px 0;line-height:1.6}
+.btn{width:100%;padding:14px;background:#1D5BA6;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<h2>🔄 출역 데이터 마이그레이션</h2>
+<div class="card">
+  <p>localStorage에 저장된 출역 체크 데이터를 Firebase로 옮겨요.</p>
+  <p id="scan-result" class="pending">스캔 중...</p>
+</div>
+<div id="result-area"></div>
+<button class="btn" id="migrateBtn" disabled onclick="migrate()">Firebase로 저장</button>
+
+<script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const CFG = {
+  apiKey:"AIzaSyCyQxBJ_ftfM0ImBXubmqD5gfzFR54iPmE",
+  authDomain:"p4ph2-fab-506a7.firebaseapp.com",
+  projectId:"p4ph2-fab-506a7",
+  storageBucket:"p4ph2-fab-506a7.firebasestorage.app",
+  messagingSenderId:"36946317914",
+  appId:"1:36946317914:web:c6ad5f3a1b98130c99fe63"
+};
+let app; try{app=getApp('mg');}catch(e){app=initializeApp(CFG,'mg');}
+const db = getFirestore(app);
+
+// localStorage에서 worker_ck_ 키 전부 스캔
+const found = [];
+for(let i=0;i<localStorage.length;i++){
+  const key=localStorage.key(i);
+  if(key && key.startsWith('worker_ck_')){
+    const dateKey=key.replace('worker_ck_','');
+    const checks=JSON.parse(localStorage.getItem(key)||'[]');
+    if(checks.length>0) found.push({dateKey,checks});
+  }
+}
+
+const scanEl = document.getElementById('scan-result');
+const resultArea = document.getElementById('result-area');
+const btn = document.getElementById('migrateBtn');
+
+if(found.length===0){
+  scanEl.textContent='❌ localStorage에 출역 데이터가 없어요';
+  scanEl.className='err';
+} else {
+  scanEl.textContent=`✓ ${found.length}개 날짜 데이터 발견`;
+  scanEl.className='ok';
+  resultArea.innerHTML = found.map(f=>`
+    <div class="card">
+      <p><b>${f.dateKey}</b> — ${f.checks.length}명: [${f.checks.join(', ')}]</p>
+      <p id="st-${f.dateKey}" class="pending">대기 중</p>
+    </div>`).join('');
+  btn.disabled=false;
+}
+
+window.migrate = async function(){
+  btn.disabled=true;
+  btn.textContent='저장 중...';
+  for(const {dateKey,checks} of found){
+    const stEl=document.getElementById('st-'+dateKey);
+    try{
+      await setDoc(doc(db,'worker_attendance',dateKey),{checks,updatedAt:serverTimestamp()});
+      stEl.textContent='✓ Firebase 저장 완료!';
+      stEl.className='ok';
+    }catch(e){
+      stEl.textContent='❌ 오류: '+e.message;
+      stEl.className='err';
+    }
+  }
+  btn.textContent='완료!';
+};
+</script>
+</body>
+</html>
