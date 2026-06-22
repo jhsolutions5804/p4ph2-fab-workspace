@@ -1416,14 +1416,14 @@ const LEAVE_BG_MAP={'annual':'#ffeaea','half-am':'#fff3e0','half-pm':'#f3f0ff'};
 // 기술인 명단
 const WORKERS=[
   {id:'w1',name:'서민우',role:'팀장'},
-  {id:'w2',name:'김혁',role:'기술인'},
-  {id:'w3',name:'심산',role:'기술인'},
-  {id:'w4',name:'유지범',role:'기술인'},
-  {id:'w5',name:'이미정',role:'기술인'},
-  {id:'w6',name:'이승준',role:'기술인'},
-  {id:'w7',name:'정대웅',role:'기술인'},
-  {id:'w8',name:'태성원',role:'기술인'},
-  {id:'w9',name:'미첼',role:'기술인'},
+  {id:'w2',name:'김혁',role:''},
+  {id:'w3',name:'심산',role:''},
+  {id:'w4',name:'유지범',role:''},
+  {id:'w5',name:'이미정',role:''},
+  {id:'w6',name:'이승준',role:''},
+  {id:'w7',name:'정대웅',role:''},
+  {id:'w8',name:'태성원',role:''},
+  {id:'w9',name:'미첼',role:''},
 ];
 
 let attendDayOffset=0;
@@ -1482,7 +1482,7 @@ function renderAttend(){
       <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${checked?'#1D5BA6':'#d1d1d6'};background:${checked?'#1D5BA6':'#fff'};flex-shrink:0;display:flex;align-items:center;justify-content:center">
         ${checked?'<div style="width:11px;height:7px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)"></div>':''}
       </div>
-      <span style="font-size:13px;font-weight:600;color:${checked?'#1D5BA6':'#1d1d1f'}">${w.name} ${w.role}</span>
+      <span style="font-size:13px;font-weight:600;color:${checked?'#1D5BA6':'#1d1d1f'}">${w.name}${w.role?' '+w.role:''}</span>
       <span style="margin-left:auto;font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;background:${checked?'#e8f0fb':'#f0f0f0'};color:${checked?'#1D5BA6':'#86868b'}">${checked?'출역':'미출역'}</span>
     </div>`;
   }).join('');
