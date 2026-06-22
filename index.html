@@ -1187,7 +1187,7 @@ function getCksProg(zoneId){
 }
 
 function calcZone(z,cksObj){
-  const cks=cksObj.merged||cksObj; // 누적 전체 기준으로 계산
+  const cks=cksObj.merged||cksObj;
   let zIn=0,zAn=0,zInstChecked=0,zChk=0,totalChecked=0;
   z.eqs.forEach(eq=>{
     CHECK_COLS.forEach(c=>{if(cks[eq+'_'+c])totalChecked++;});
@@ -1198,8 +1198,12 @@ function calcZone(z,cksObj){
   });
   const mx=z.total*CHECK_COLS.length;
   const pct=(totalChecked/mx*100).toFixed(1);
-  const instPct=(zInstChecked/(z.total*INSTALL_COLS.length)*100).toFixed(0);
-  return{zIn,zAn,zInstChecked,instPct,zChk,totalChecked,mx,pct};
+  // 설치 바: 체크수 / (total×5) — 체크마다 즉시 반영
+  const instBarPct=(zInstChecked/(z.total*INSTALL_COLS.length)*100).toFixed(0);
+  // 설치 라벨: 장비별 5개 항목 모두 완료된 대수 / total
+  const instDone=z.eqs.filter(eq=>INSTALL_COLS.every(c=>cks[eq+'_'+c])).length;
+  const instLabel=instDone+'/'+z.total;
+  return{zIn,zAn,zInstChecked,instBarPct,instLabel,instDone,zChk,totalChecked,mx,pct};
 }
 
 function updateProgressGlobal(){
@@ -1208,8 +1212,7 @@ function updateProgressGlobal(){
     const cksObj=getCksProg(z.id);
     const r=calcZone(z,cksObj);
     grandChecked+=r.totalChecked;grandMax+=r.mx;totalIn+=r.zIn;
-    const cks=cksObj.merged||cksObj;
-    z.eqs.forEach(eq=>{if(INSTALL_COLS.every(c=>cks[eq+'_'+c]))totalInst++;});
+    totalInst+=r.instDone;
   });
   document.getElementById('total-pct').textContent=(grandChecked/grandMax*100).toFixed(1)+'%';
   document.getElementById('total-in').textContent=totalIn+'대';
@@ -1249,15 +1252,17 @@ function buildCheckTable(z,cksObj){
 
 function refreshZoneCard(id,cksObj){
   const z=ZONES.find(z=>z.id===id);if(!z)return;
-  const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cksObj);
+  const{zIn,zAn,instBarPct,instLabel,zChk,pct}=calcZone(z,cksObj);
   const card=document.getElementById('zone-'+id);if(!card)return;
   card.querySelector('.zone-pct-pill').textContent=pct+'%';
   const bars=card.querySelectorAll('.step-fill');
   bars[0].style.width=(zIn/z.total*100)+'%';bars[1].style.width=(zAn/z.total*100)+'%';
-  bars[2].style.width=instPct+'%';bars[3].style.width=(zChk/z.total*100)+'%';
+  bars[2].style.width=instBarPct+'%';bars[3].style.width=(zChk/z.total*100)+'%';
   const labels=card.querySelectorAll('.step-label');
-  labels[0].textContent='반입 '+zIn+'/'+z.total;labels[1].textContent='입고검사 '+zAn+'/'+z.total;
-  labels[2].textContent='설치 '+zInstChecked+'/'+(z.total*INSTALL_COLS.length);labels[3].textContent='시공검측 '+zChk+'/'+z.total;
+  labels[0].textContent='반입 '+zIn+'/'+z.total;
+  labels[1].textContent='입고검사 '+zAn+'/'+z.total;
+  labels[2].textContent='설치 '+instLabel;
+  labels[3].textContent='시공검측 '+zChk+'/'+z.total;
   const sumCells=card.querySelectorAll('.sum-row td');
   const cks=cksObj.merged||cksObj;
   CHECK_COLS.forEach((c,i)=>{
@@ -1306,7 +1311,7 @@ function renderProgress(){
   list.innerHTML='';
   ZONES.forEach(z=>{
     const cksObj=getCksProg(z.id);
-    const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cksObj);
+    const{zIn,zAn,instBarPct,instLabel,zChk,pct}=calcZone(z,cksObj);
     const wasOpen=openIds.includes(z.id);
     const card=document.createElement('div');
     card.className='zone-card'+(wasOpen?' open':'');card.id='zone-'+z.id;
@@ -1321,7 +1326,7 @@ function renderProgress(){
       <div class="zone-bars">
         <div><div class="step-bar"><div class="step-fill fill-in" style="width:${(zIn/z.total*100).toFixed(0)}%"></div></div><div class="step-label">반입 ${zIn}/${z.total}</div></div>
         <div><div class="step-bar"><div class="step-fill fill-an" style="width:${(zAn/z.total*100).toFixed(0)}%"></div></div><div class="step-label">입고검사 ${zAn}/${z.total}</div></div>
-        <div><div class="step-bar"><div class="step-fill fill-inst" style="width:${instPct}%"></div></div><div class="step-label">설치 ${zInstChecked}/${z.total*INSTALL_COLS.length}</div></div>
+        <div><div class="step-bar"><div class="step-fill fill-inst" style="width:${instBarPct}%"></div></div><div class="step-label">설치 ${instLabel}</div></div>
         <div><div class="step-bar"><div class="step-fill" style="width:${(zChk/z.total*100).toFixed(0)}%;background:#7c3aed"></div></div><div class="step-label">시공검측 ${zChk}/${z.total}</div></div>
       </div>
       <div class="checklist-wrap" id="cl-${z.id}" style="display:${wasOpen?'block':'none'}">
