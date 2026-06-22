@@ -285,26 +285,36 @@ const db = getFirestore(app);
 window._fbDb = db;
 window._fbReady = true;
 
-// 보고사항 실시간 구독
-const reportsRef = collection(db, 'daily_reports');
-const q = query(reportsRef, orderBy('ts', 'desc'));
+// ===== 보고사항 — 날짜별 실시간 구독 =====
+// Firestore 컬렉션: daily_reports_{날짜키}  예) daily_reports_2026-06-23
+// 날짜가 바뀔 때마다 구독 대상 교체
 
-onSnapshot(q, (snapshot) => {
-  const reports = [];
-  snapshot.forEach(d => reports.push({ id: d.id, ...d.data() }));
-  window._reports = reports;
-  renderReportList(reports);
-  setSyncStatus('online');
-}, (err) => {
-  console.error('Firebase 구독 오류:', err);
-  setSyncStatus('offline');
-  // 오프라인 fallback: localStorage
-  const local = getLocalReports();
-  window._reports = local;
-  renderReportList(local);
-});
+let _reportUnsub = null;
 
-// 보고사항 등록 (Firebase)
+window._fbSubscribeReports = function(dateKey) {
+  // 이전 구독 해제
+  if (_reportUnsub) { _reportUnsub(); _reportUnsub = null; }
+
+  // 로딩 표시
+  renderReportList(null);
+
+  const colName = 'daily_reports_' + dateKey;
+  const q = query(collection(db, colName), orderBy('ts', 'desc'));
+
+  _reportUnsub = onSnapshot(q, (snapshot) => {
+    const reports = [];
+    snapshot.forEach(d => reports.push({ id: d.id, colName, ...d.data() }));
+    window._currentReportDateKey = dateKey;
+    renderReportList(reports);
+    setSyncStatus('online');
+  }, (err) => {
+    console.error('보고사항 구독 오류:', err);
+    setSyncStatus('offline');
+    renderReportList(getLocalReports(dateKey));
+  });
+};
+
+// 보고사항 등록 (날짜 컬렉션에 저장)
 window.submitReport = async function() {
   const input = document.getElementById('report-input');
   const text = input.value.trim();
@@ -312,26 +322,26 @@ window.submitReport = async function() {
   if (!text) return;
   if (!name) { alert('이름을 먼저 선택해 주세요'); return; }
 
+  const dateKey = window._currentReportDateKey || window._currentCheckKey || '';
   const btn = document.querySelector('.report-submit');
   btn.textContent = '저장중';
   btn.disabled = true;
 
   try {
-    if (window._fbDb) {
+    if (window._fbDb && dateKey) {
       const now = new Date();
-      const dateStr = (now.getMonth()+1)+'/'+(now.getDate())+' '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
-      await addDoc(collection(window._fbDb, 'daily_reports'), {
-        text, name, date: dateStr, ts: serverTimestamp()
+      const timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+      await addDoc(collection(db, 'daily_reports_' + dateKey), {
+        text, name, time: timeStr, ts: serverTimestamp()
       });
     } else {
       // 오프라인 fallback
       const now = new Date();
-      const dateStr = (now.getMonth()+1)+'/'+(now.getDate())+' '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
-      const local = getLocalReports();
-      local.unshift({ text, name, date: dateStr, ts: Date.now(), id: 'local_'+Date.now() });
-      if(local.length>30) local.splice(30);
-      saveLocalReports(local);
-      window._reports = local;
+      const timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+      const local = getLocalReports(dateKey);
+      local.unshift({ text, name, time: timeStr, ts: Date.now(), id: 'local_'+Date.now(), colName: 'daily_reports_'+dateKey });
+      if (local.length > 30) local.splice(30);
+      saveLocalReports(dateKey, local);
       renderReportList(local);
     }
     input.value = '';
@@ -344,18 +354,18 @@ window.submitReport = async function() {
   }
 };
 
-// 보고사항 삭제 (Firebase)
-window.deleteReport = async function(id) {
+// 보고사항 삭제
+window.deleteReport = async function(id, colName) {
   if (!id) return;
   if (id.startsWith('local_')) {
-    const local = getLocalReports().filter(r => r.id !== id);
-    saveLocalReports(local);
-    window._reports = local;
+    const dateKey = window._currentReportDateKey || '';
+    const local = getLocalReports(dateKey).filter(r => r.id !== id);
+    saveLocalReports(dateKey, local);
     renderReportList(local);
     return;
   }
   try {
-    await deleteDoc(doc(window._fbDb, 'daily_reports', id));
+    await deleteDoc(doc(db, colName, id));
   } catch(e) { console.error(e); alert('삭제 실패'); }
 };
 
@@ -378,7 +388,12 @@ function setSyncStatus(status) {
 function renderReportList(reports) {
   const el = document.getElementById('report-list');
   if (!el) return;
-  if (!reports || !reports.length) {
+  // null = 로딩 중
+  if (reports === null) {
+    el.innerHTML = '<div style="font-size:12px;color:#86868b;padding:10px 0">불러오는 중...</div>';
+    return;
+  }
+  if (!reports.length) {
     el.innerHTML = '<div style="font-size:12px;color:#86868b;padding:6px 0 8px">아직 보고사항이 없어요</div>';
     return;
   }
@@ -386,20 +401,20 @@ function renderReportList(reports) {
     <div class="report-item">
       <div class="report-item-body">
         <div class="report-item-meta">
-          <span class="report-item-name">${r.name || '—'}</span>${r.date || ''}
+          <span class="report-item-name">${r.name || '—'}</span>${r.time || ''}
         </div>
         <div class="report-item-text">${r.text}</div>
       </div>
-      <button class="report-item-del" onclick="deleteReport('${r.id}')" title="삭제">×</button>
+      <button class="report-item-del" onclick="deleteReport('${r.id}','${r.colName||''}')" title="삭제">×</button>
     </div>`).join('');
 }
 
-// localStorage fallback
-function getLocalReports() {
-  try { return JSON.parse(localStorage.getItem('daily_reports') || '[]'); } catch(e) { return []; }
+// localStorage fallback (날짜별)
+function getLocalReports(dateKey) {
+  try { return JSON.parse(localStorage.getItem('reports_'+(dateKey||'')) || '[]'); } catch(e) { return []; }
 }
-function saveLocalReports(arr) {
-  try { localStorage.setItem('daily_reports', JSON.stringify(arr)); } catch(e) {}
+function saveLocalReports(dateKey, arr) {
+  try { localStorage.setItem('reports_'+(dateKey||''), JSON.stringify(arr)); } catch(e) {}
 }
 
 // ===== 체크리스트 상태 Firebase 연동 =====
@@ -753,6 +768,9 @@ function renderToday(){
   // Firebase 구독 시작 (날짜별)
   window._currentCheckKey=key;
   if(window._fbSubscribeChecks) window._fbSubscribeChecks(key);
+  // 보고사항도 날짜별 구독 교체
+  window._currentReportDateKey=key;
+  if(window._fbSubscribeReports) window._fbSubscribeReports(key);
   const savedChecks=(window._fbGetChecks?window._fbGetChecks(key):[])||[];
   const list=document.getElementById('task-list');
   if(!items.length){
