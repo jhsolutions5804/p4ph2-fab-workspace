@@ -155,8 +155,8 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <button class="tab active" onclick="switchTab('today',this)">오늘</button>
       <button class="tab" onclick="switchTab('twoweek',this)">2주</button>
       <button class="tab" onclick="switchTab('calendar',this)">캘린더</button>
-      <button class="tab" onclick="switchTab('progress',this)">공정</button>
       <button class="tab" onclick="switchTab('attend',this)">근태</button>
+      <button class="tab" onclick="switchTab('progress',this)">공정</button>
     </div>
   </div>
 
@@ -243,10 +243,10 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
     <div id="tab-progress" style="display:none">
       <div class="ref-date">기준일: 2026-06-19</div>
       <div class="total-card">
-        <div class="stat-item"><span class="stat-label">총 설치 대상</span><span class="stat-val">183대</span></div>
-        <div class="stat-item"><span class="stat-label">누적 반입</span><span class="stat-val" id="total-in">—</span></div>
+        <div class="stat-item"><span class="stat-label">전체 물량</span><span class="stat-val">183대</span></div>
         <div class="stat-item"><span class="stat-label">전체 공정율</span><span class="stat-val" id="total-pct">—</span></div>
-        <div class="stat-item"><span class="stat-label">완료 구역</span><span class="stat-val" id="done-zones">0</span></div>
+        <div class="stat-item"><span class="stat-label">누적 반입</span><span class="stat-val" id="total-in">—</span></div>
+        <div class="stat-item"><span class="stat-label">누적 설치</span><span class="stat-val" id="total-inst">—</span></div>
       </div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#1D5BA6"></span>반입</span>
@@ -939,11 +939,10 @@ function changeMonth(dir){curMonth+=dir;if(curMonth>11){curMonth=0;curYear++;}if
 // ===== PROGRESS =====
 function renderProgress(){
   const list=document.getElementById('zone-list');list.innerHTML='';
-  let ts=0,ds=0,totalIn=0,doneZones=0;
+  let ts=0,ds=0,totalIn=0,totalInst=0;
   ZONES.forEach(z=>{
     const mx=z.total*3;const done=z.반입+z.안착+z.설치;
-    ts+=mx;ds+=done;totalIn+=z.반입;
-    if(z.설치===z.total&&z.total>0)doneZones++;
+    ts+=mx;ds+=done;totalIn+=z.반입;totalInst+=z.설치;
     const pct=(done/mx*100).toFixed(1);
     const div=document.createElement('div');div.className='pjt-zone';
     div.innerHTML=`<div class="pjt-zone-header"><span class="pjt-zone-name">${z.name} <span style="color:#86868b;font-size:11px;font-weight:400">(${z.total}대)</span></span><span class="pjt-zone-pct">${pct}%</span></div>
@@ -956,7 +955,7 @@ function renderProgress(){
   });
   document.getElementById('total-pct').textContent=(ds/ts*100).toFixed(1)+'%';
   document.getElementById('total-in').textContent=totalIn+'대';
-  document.getElementById('done-zones').textContent=doneZones;
+  document.getElementById('total-inst').textContent=totalInst+'대';
 }
 
 // ===== ATTENDANCE =====
