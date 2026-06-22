@@ -255,9 +255,9 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
     <!-- CALENDAR -->
     <div id="tab-calendar" style="display:none">
       <div class="cal-header">
-        <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+        <button class="cal-nav" onclick="changeLaborMonth(-1)">‹</button>
         <span class="cal-month" id="cal-month-label"></span>
-        <button class="cal-nav" onclick="changeMonth(1)">›</button>
+        <button class="cal-nav" onclick="changeLaborMonth(1)">›</button>
       </div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#1D5BA6"></span>반입</span>
@@ -1828,4 +1828,95 @@ window.generateProgressPPT = async function() {
     status.textContent = '❌ 오류: '+e.message;
   }
 };
+// ===== LABOR (공수표) =====
+let laborYear=null,laborMonth=null;
+function getLaborKey(y,m){return String(y)+'-'+String(m).padStart(2,'0');}
+window.goLaborToday=function(){const now=new Date();laborYear=now.getFullYear();laborMonth=now.getMonth()+1;renderLabor();};
+window.changeLaborMonth=function(dir){
+  if(!laborYear){goLaborToday();return;}
+  laborMonth+=dir;
+  if(laborMonth<1){laborMonth=12;laborYear--;}if(laborMonth>12){laborMonth=1;laborYear++;}
+  renderLabor();
+};
+window.initLabor=function(){if(!laborYear)goLaborToday();else renderLabor();};
+window.toggleLaborCheck=async function(dateKey,workerId,slot){
+  const monthKey=dateKey.substring(0,7);
+  try{
+    const {doc,getDoc,setDoc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const ref=doc(window._fbDb,'labor_checks',monthKey,'days',dateKey);
+    const snap=await getDoc(ref);
+    const data=snap.exists()?(snap.data()||{}):{};
+    const wd=data[workerId]||{am:false,pm:false};
+    wd[slot]=!wd[slot];data[workerId]=wd;
+    await setDoc(ref,data);
+    renderLabor();
+  }catch(e){console.error('공수 저장 오류:',e);}
+};
+async function renderLabor(){
+  const y=laborYear,m=laborMonth,monthKey=getLaborKey(y,m);
+  document.getElementById('labor-month-label').textContent=y+'년 '+m+'월';
+  document.getElementById('labor-total-label').textContent='불러오는 중...';
+  try{
+    const {collection,getDocs,doc,getDoc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db=window._fbDb;
+    const attSnap=await getDocs(collection(db,'worker_attendance'));
+    const monthDates=[];
+    attSnap.forEach(d=>{if(d.id.startsWith(monthKey))monthDates.push({dateKey:d.id,checks:d.data().checks||[]});});
+    monthDates.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+    const laborData={};
+    for(const {dateKey} of monthDates){
+      try{
+        const ref=doc(db,'labor_checks',monthKey,'days',dateKey);
+        const snap=await getDoc(ref);
+        laborData[dateKey]=snap.exists()?snap.data():{};
+      }catch(e){laborData[dateKey]={};}
+    }
+    if(monthDates.length===0){
+      document.getElementById('labor-total-label').textContent='출역 데이터 없음';
+      document.getElementById('labor-table-wrap').innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:24px 0">이 달 출역 기록이 없어요</div>';
+      return;
+    }
+    const DAYS_KO=['일','월','화','수','목','금','토'];
+    const thDates=monthDates.map(function(x){
+      var dt=new Date(x.dateKey),mm=dt.getMonth()+1,dd=dt.getDate(),dow=DAYS_KO[dt.getDay()],isWE=dt.getDay()===0||dt.getDay()===6;
+      return '<th style="min-width:40px;'+(isWE?'color:#e05':'')+'">'+(mm)+'/'+dd+'<br><span style="font-size:9px;font-weight:400">'+dow+'</span></th>';
+    }).join('');
+    const totalByDate={};
+    monthDates.forEach(function(x){totalByDate[x.dateKey]={total:0};});
+    const allWorkerIds=new Set();
+    monthDates.forEach(function(x){x.checks.forEach(function(id){allWorkerIds.add(id);});});
+    var rows='';
+    allWorkerIds.forEach(function(wid){
+      var worker=WORKERS.find(function(w){return w.id===wid;});
+      var name=worker?worker.name+(worker.role?' '+worker.role:''):wid;
+      var wtotal=0;
+      var cells=monthDates.map(function(x){
+        var dateKey=x.dateKey,checks=x.checks;
+        var isOut=checks.includes(wid);
+        var ld=(laborData[dateKey]||{})[wid]||{am:false,pm:false};
+        var am=isOut&&ld.am,pm=isOut&&ld.pm;
+        var pts=(am?0.5:0)+(pm?0.5:0);
+        wtotal+=pts;totalByDate[dateKey].total+=pts;
+        if(!isOut)return '<td style="background:#f9f9f9;color:#ccc">-</td>';
+        return '<td><div class="labor-col">'
+          +'<span class="labor-col-label">오전</span>'
+          +'<div class="labor-check '+(am?'am':'')+'" onclick="toggleLaborCheck(''+dateKey+'',''+wid+'','am')"></div>'
+          +'<span class="labor-col-label">오후</span>'
+          +'<div class="labor-check '+(pm?'pm':'')+'" onclick="toggleLaborCheck(''+dateKey+'',''+wid+'','pm')"></div>'
+          +'</div></td>';
+      }).join('');
+      rows+='<tr><td>'+name+'</td>'+cells+'<td class="labor-val">'+wtotal.toFixed(1)+'</td></tr>';
+    });
+    var sumCells=monthDates.map(function(x){return '<td style="font-size:11px;font-weight:700;color:#1D5BA6">'+totalByDate[x.dateKey].total.toFixed(1)+'</td>';}).join('');
+    var grand=Object.values(totalByDate).reduce(function(s,v){return s+v.total;},0);
+    document.getElementById('labor-table-wrap').innerHTML=
+      '<table class="labor-table"><thead><tr><th>이름</th>'+thDates+'<th>합계</th></tr></thead>'
+      +'<tbody>'+rows+'<tr><td>일계</td>'+sumCells+'<td class="labor-val">'+grand.toFixed(1)+'</td></tr></tbody></table>';
+    document.getElementById('labor-total-label').textContent='총 '+grand.toFixed(1)+'공수 · '+monthDates.length+'일';
+  }catch(e){
+    console.error('공수표 오류:',e);
+    document.getElementById('labor-total-label').textContent='오류: '+e.message;
+  }
+}
+
 </script>
