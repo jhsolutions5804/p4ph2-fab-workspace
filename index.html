@@ -1431,28 +1431,75 @@ function getAttendDate(){const b=getAppToday();b.setDate(b.getDate()+attendDayOf
 window.changeAttendDay=function(dir){attendDayOffset+=dir;renderAttend();};
 window.goAttendToday=function(){attendDayOffset=0;renderAttend();};
 
-// 출역 체크 저장/불러오기 (날짜별 localStorage)
-function getWorkerChecks(dateKey){try{return JSON.parse(localStorage.getItem('worker_ck_'+dateKey)||'[]');}catch(e){return[];}}
-function setWorkerChecks(dateKey,arr){try{localStorage.setItem('worker_ck_'+dateKey,JSON.stringify(arr));}catch(e){}}
-
 window.toggleWorker=function(workerId,dateKey){
-  const checks=getWorkerChecks(dateKey);
-  const idx=checks.indexOf(workerId);
-  if(idx===-1)checks.push(workerId); else checks.splice(idx,1);
-  setWorkerChecks(dateKey,checks);
-  renderAttend();
+  if(window._fbToggleWorker){
+    window._fbToggleWorker(workerId,dateKey);
+    // 낙관적 UI 즉시 반영
+    const cur=window._fbGetWorkerChecks(dateKey);
+    const idx=cur.indexOf(workerId);
+    if(idx===-1)cur.push(workerId); else cur.splice(idx,1);
+    window._workerCache[dateKey]=cur;
+    if(window._renderWorkerUI) window._renderWorkerUI();
+  }
+};
+
+// ===== 출역 체크 Firebase 연동 =====
+// Firestore: worker_attendance/{dateKey} 문서, 구조: { checks: ['w1','w3',...] }
+let _workerUnsub = null;
+window._workerCache = {};
+
+window._fbSubscribeWorker = async function(dateKey) {
+  if(_workerUnsub){ _workerUnsub(); _workerUnsub=null; }
+  const { doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const ref = doc(db, 'worker_attendance', dateKey);
+  _workerUnsub = onSnapshot(ref, snap => {
+    window._workerCache[dateKey] = snap.exists() ? (snap.data().checks || []) : [];
+    // UI 갱신
+    if(window._renderWorkerUI) window._renderWorkerUI();
+  }, err => {
+    console.error('출역 구독 오류:', err);
+    window._workerCache[dateKey] = JSON.parse(localStorage.getItem('worker_ck_'+dateKey)||'[]');
+    if(window._renderWorkerUI) window._renderWorkerUI();
+  });
+};
+
+window._fbToggleWorker = async function(workerId, dateKey) {
+  try {
+    const { doc, getDoc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const ref = doc(db, 'worker_attendance', dateKey);
+    const snap = await getDoc(ref);
+    let checks = snap.exists() ? (snap.data().checks || []) : [];
+    const idx = checks.indexOf(workerId);
+    if(idx===-1) checks.push(workerId); else checks.splice(idx,1);
+    await setDoc(ref, { checks, updatedAt: serverTimestamp() });
+    window._workerCache[dateKey] = checks;
+  } catch(e) {
+    console.error('출역 저장 오류:', e);
+    // fallback localStorage
+    const arr = JSON.parse(localStorage.getItem('worker_ck_'+dateKey)||'[]');
+    const idx = arr.indexOf(workerId);
+    if(idx===-1) arr.push(workerId); else arr.splice(idx,1);
+    localStorage.setItem('worker_ck_'+dateKey, JSON.stringify(arr));
+    window._workerCache[dateKey] = arr;
+  }
+};
+
+window._fbGetWorkerChecks = function(dateKey) {
+  if(window._workerCache[dateKey] !== undefined) return window._workerCache[dateKey];
+  try { return JSON.parse(localStorage.getItem('worker_ck_'+dateKey)||'[]'); } catch(e) { return []; }
 };
 
 function renderAttend(){
   const d=getAttendDate();
   const dateKey=toKey(d);
   const days=['일','월','화','수','목','금','토'];
-  const todayKey=toKey(getAppToday());
-  const isToday=dateKey===todayKey;
 
   // 날짜 라벨
   document.getElementById('att-date-label').textContent=
     'W'+getWeekNum(d)+' · '+(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
+
+  // Firebase 출역 구독 시작
+  if(window._fbSubscribeWorker) window._fbSubscribeWorker(dateKey);
 
   // ── 휴가 현황 ──
   const el=document.getElementById('att-list');
@@ -1468,24 +1515,27 @@ function renderAttend(){
       </div>`).join('');
   }
 
-  // ── 기술인 출역 현황 ──
-  const checks=getWorkerChecks(dateKey);
-  const checkedCount=checks.length;
-  document.getElementById('att-worker-count').textContent=
-    `출역 ${checkedCount}명 / 전체 ${WORKERS.length}명`;
+  // ── 기술인 출역 현황 (Firebase 실시간) ──
+  function renderWorkerList(){
+    const checks=window._fbGetWorkerChecks?window._fbGetWorkerChecks(dateKey):[];
+    document.getElementById('att-worker-count').textContent=
+      `출역 ${checks.length}명 / 전체 ${WORKERS.length}명`;
+    document.getElementById('att-worker-list').innerHTML=WORKERS.map(w=>{
+      const checked=checks.includes(w.id);
+      return`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f5f5f7;border-radius:10px;margin-bottom:6px;cursor:pointer;-webkit-user-select:none;user-select:none"
+        onclick="toggleWorker('${w.id}','${dateKey}')">
+        <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${checked?'#1D5BA6':'#d1d1d6'};background:${checked?'#1D5BA6':'#fff'};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${checked?'<div style="width:11px;height:7px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)"></div>':''}
+        </div>
+        <span style="font-size:13px;font-weight:600;color:${checked?'#1D5BA6':'#1d1d1f'}">${w.name}${w.role?' '+w.role:''}</span>
+        <span style="margin-left:auto;font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;background:${checked?'#e8f0fb':'#f0f0f0'};color:${checked?'#1D5BA6':'#86868b'}">${checked?'출역':'미출역'}</span>
+      </div>`;
+    }).join('');
+  }
 
-  const workerEl=document.getElementById('att-worker-list');
-  workerEl.innerHTML=WORKERS.map(w=>{
-    const checked=checks.includes(w.id);
-    return`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f5f5f7;border-radius:10px;margin-bottom:6px;cursor:pointer;-webkit-user-select:none;user-select:none"
-      onclick="toggleWorker('${w.id}','${dateKey}')">
-      <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${checked?'#1D5BA6':'#d1d1d6'};background:${checked?'#1D5BA6':'#fff'};flex-shrink:0;display:flex;align-items:center;justify-content:center">
-        ${checked?'<div style="width:11px;height:7px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)"></div>':''}
-      </div>
-      <span style="font-size:13px;font-weight:600;color:${checked?'#1D5BA6':'#1d1d1f'}">${w.name}${w.role?' '+w.role:''}</span>
-      <span style="margin-left:auto;font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;background:${checked?'#e8f0fb':'#f0f0f0'};color:${checked?'#1D5BA6':'#86868b'}">${checked?'출역':'미출역'}</span>
-    </div>`;
-  }).join('');
+  // Firebase onSnapshot 콜백으로 등록
+  window._renderWorkerUI = renderWorkerList;
+  renderWorkerList(); // 초기 렌더
 }
 
 // ===== TAB =====
