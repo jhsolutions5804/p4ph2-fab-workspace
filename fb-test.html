@@ -1,45 +1,29 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head><meta charset="UTF-8"><title>Firebase 진단 v2</title>
-<style>body{font-family:monospace;padding:20px;background:#f5f5f5;}
-.ok{color:#2e7d32;font-weight:700;} .err{color:#c0392b;font-weight:700;}
-p{font-size:13px;margin:4px 0;}
-</style></head>
+<head><meta charset="UTF-8"><title>Firebase 진단</title>
+<style>body{font-family:monospace;padding:20px;} .ok{color:green;} .err{color:red;}</style>
+</head>
 <body>
-<h2>🔥 worker_attendance 전체 문서 확인</h2>
+<h2>worker_attendance 전체 문서</h2>
 <div id="out">로딩 중...</div>
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-const CFG = {
-  apiKey:"AIzaSyCyQxBJ_ftfM0ImBXubmqD5gfzFR54iPmE",
-  authDomain:"p4ph2-fab-506a7.firebaseapp.com",
-  projectId:"p4ph2-fab-506a7",
-  storageBucket:"p4ph2-fab-506a7.firebasestorage.app",
-  messagingSenderId:"36946317914",
-  appId:"1:36946317914:web:c6ad5f3a1b98130c99fe63"
-};
-let app; try{app=getApp('fbtest2');}catch(e){app=initializeApp(CFG,'fbtest2');}
-const db = getFirestore(app);
-const out = document.getElementById('out');
-
-try {
-  const snap = await getDocs(collection(db,'worker_attendance'));
-  if(snap.empty){
-    out.innerHTML='<p class="err">컬렉션 비어있음</p>';
-  } else {
-    let html='';
+import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const CFG={apiKey:"AIzaSyCyQxBJ_ftfM0ImBXubmqD5gfzFR54iPmE",authDomain:"p4ph2-fab-506a7.firebaseapp.com",projectId:"p4ph2-fab-506a7",storageBucket:"p4ph2-fab-506a7.firebasestorage.app",messagingSenderId:"36946317914",appId:"1:36946317914:web:c6ad5f3a1b98130c99fe63"};
+let app; try{app=getApp('t3');}catch(e){app=initializeApp(CFG,'t3');}
+const db=getFirestore(app);
+const out=document.getElementById('out');
+try{
+  const snap=await getDocs(collection(db,'worker_attendance'));
+  if(snap.empty){ out.innerHTML='<p class="err">문서 없음</p>'; }
+  else{
+    let h='';
     snap.forEach(d=>{
-      const checks=d.data().checks||[];
-      html+=`<p class="ok">📄 <b>${d.id}</b> — ${checks.length}명: [${checks.join(', ')}]</p>`;
+      const c=d.data().checks||[];
+      h+=`<p class="ok"><b>${d.id}</b> — ${c.length}명: [${c.join(', ')}]</p>`;
     });
-    out.innerHTML=html;
+    out.innerHTML=h;
   }
-} catch(e){
-  out.innerHTML=`<p class="err">오류: ${e.code} — ${e.message}</p>`;
-}
+}catch(e){ out.innerHTML='<p class="err">오류: '+e.code+' '+e.message+'</p>'; }
 </script>
-</body>
-</html>
+</body></html>
