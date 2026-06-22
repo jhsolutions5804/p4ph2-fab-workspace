@@ -18,6 +18,21 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .tab.active{color:#1d1d1f;font-weight:600;border-bottom-color:#1D5BA6}
 .content{padding:16px}
 
+
+/* LABOR */
+.labor-table{width:100%;border-collapse:collapse;font-size:11px;min-width:340px}
+.labor-table th{background:#1D5BA6;color:#fff;padding:6px 4px;text-align:center;font-weight:600;white-space:nowrap;position:sticky;top:0}
+.labor-table th:first-child{text-align:left;padding-left:8px;min-width:60px}
+.labor-table td{padding:5px 4px;text-align:center;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+.labor-table td:first-child{text-align:left;padding-left:8px;font-size:11px;font-weight:600;color:#1d1d1f;white-space:nowrap}
+.labor-table tr:last-child td{background:#f0f6ff;font-weight:700;color:#1D5BA6;border-top:2px solid #1D5BA6}
+.labor-check{width:20px;height:20px;border-radius:5px;border:1.5px solid #d1d1d6;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.labor-check.am{background:#5BA4CF;border-color:#5BA4CF}
+.labor-check.pm{background:#1D5BA6;border-color:#1D5BA6}
+.labor-check.am::after,.labor-check.pm::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.labor-val{font-size:12px;font-weight:700;color:#1D5BA6}
+.labor-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+.labor-col-label{font-size:9px;color:#86868b}
 /* TODAY */
 .today-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
 .today-title{font-size:16px;font-weight:600;color:#1d1d1f;flex:1;text-align:center}
@@ -184,6 +199,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <button class="tab" onclick="switchTab('calendar',this)">캘린더</button>
       <button class="tab" onclick="switchTab('attend',this)">근태</button>
       <button class="tab" onclick="switchTab('progress',this)">공정</button>
+      <button class="tab" onclick="switchTab('labor',this)">공수</button>
     </div>
   </div>
 
@@ -258,6 +274,22 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         <div class="cal-detail-title" id="cal-detail-title"></div>
         <div id="cal-detail-body"></div>
       </div>
+    </div>
+
+    <!-- LABOR -->
+    <div id="tab-labor" style="display:none">
+      <!-- 월 선택 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px">
+        <button class="nav-arrow" onclick="changeMonth(-1)">&#8249;</button>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:15px;font-weight:600;color:#1d1d1f" id="labor-month-label">—</div>
+          <div style="font-size:11px;color:#86868b;margin-top:2px" id="labor-total-label">불러오는 중...</div>
+        </div>
+        <button class="nav-arrow" onclick="changeMonth(1)">&#8250;</button>
+        <button onclick="goLaborToday()" style="font-size:11px;font-weight:600;color:#1D5BA6;background:#e8f0fb;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap">이번달</button>
+      </div>
+      <!-- 공수표 테이블 -->
+      <div id="labor-table-wrap" style="overflow-x:auto"></div>
     </div>
 
     <!-- ATTENDANCE -->
@@ -1540,13 +1572,14 @@ function renderAttend(){
 
 // ===== TAB =====
 function switchTab(name,btn){
-  ['today','twoweek','calendar','progress','attend'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
+  ['today','twoweek','calendar','progress','attend','labor'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(name==='twoweek')renderTwoWeek();
   if(name==='calendar')initCal();
   if(name==='progress')initProgress();
   if(name==='attend')renderAttend();
+  if(name==='labor')initLabor();
 }
 
 // INIT — Firebase module이 준비된 후 initToday 호출
