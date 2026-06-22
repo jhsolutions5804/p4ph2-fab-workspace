@@ -13,13 +13,11 @@ body { font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif; 
 .header-left .icon { font-size:22px; }
 .app-header h1 { font-size:17px; font-weight:700; letter-spacing:-.3px; }
 .app-header p  { font-size:11px; opacity:.75; margin-top:1px; }
-.back-btn { font-size:13px; color:#fff; opacity:.85; text-decoration:none; background:rgba(255,255,255,.15); padding:6px 12px; border-radius:20px; white-space:nowrap; }
-.back-btn:hover { opacity:1; background:rgba(255,255,255,.25); }
+.back-btn { font-size:13px; color:#fff; text-decoration:none; background:rgba(255,255,255,.18); padding:6px 12px; border-radius:20px; white-space:nowrap; }
 
 .container { max-width:480px; margin:0 auto; padding:16px 14px; }
-
 .card { background:#fff; border-radius:14px; padding:18px 16px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.07); }
-.card-label { font-size:11px; font-weight:700; color:#1D5BA6; letter-spacing:.6px; text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+.card-label { font-size:11px; font-weight:700; color:#1D5BA6; letter-spacing:.6px; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
 .card-label .num { width:18px; height:18px; background:#1D5BA6; color:#fff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10px; }
 
 select, textarea { width:100%; border:1.5px solid #dde4ef; border-radius:9px; padding:11px 13px; font-size:14px; font-family:inherit; color:#1a1a2e; background:#fafbfd; outline:none; transition:border-color .15s; appearance:none; -webkit-appearance:none; }
@@ -47,32 +45,42 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 .dp-day:hover { background:#e8f0fb; } .dp-day.today { font-weight:700; color:#1D5BA6; } .dp-day.selected { background:#1D5BA6; color:#fff; font-weight:700; } .dp-day.empty { cursor:default; } .dp-day.sun { color:#e05; } .dp-day.sat { color:#1D5BA6; } .dp-day.selected.sun,.dp-day.selected.sat { color:#fff; }
 .dp-close { margin-top:12px; width:100%; padding:10px; background:#f0f4fa; border:none; border-radius:9px; font-size:13px; color:#666; cursor:pointer; font-family:inherit; }
 
-/* 불러오기 버튼 */
-.load-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-.btn-load { display:inline-flex; align-items:center; gap:5px; padding:7px 14px; background:#e8f0fb; color:#1D5BA6; border:1.5px solid #1D5BA6; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .15s; }
-.btn-load:hover { background:#d0e2f7; }
-.btn-load:disabled { opacity:.5; cursor:not-allowed; }
-.load-status { font-size:11px; color:#aab; }
+/* 로딩 뱃지 */
+.loading-badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#1D5BA6; background:#e8f0fb; padding:5px 12px; border-radius:20px; margin-bottom:8px; }
+.loading-badge .spin { animation:spin .8s linear infinite; display:inline-block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.load-status { font-size:11px; margin-top:6px; }
 .load-status.ok  { color:#2e7d32; }
 .load-status.err { color:#c0392b; }
+
+/* 공정 결과 카드 */
+.prog-result { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+.prog-zone-row { background:#f5f8ff; border:1px solid #dde4ef; border-radius:10px; padding:10px 13px; }
+.prog-zone-name { font-size:12px; font-weight:700; color:#1D5BA6; margin-bottom:5px; }
+.prog-steps { display:flex; flex-wrap:wrap; gap:5px; }
+.prog-step-chip { font-size:11px; padding:3px 9px; border-radius:12px; font-weight:600; }
+.chip-반입    { background:#e8f0fb; color:#0a3d7a; }
+.chip-입고검사 { background:#e8f5e9; color:#1b5e20; }
+.chip-내진스토퍼,.chip-다이크,.chip-실링,.chip-동판,.chip-결선 { background:#f3f0ff; color:#3c2a8a; }
+.chip-시공검측 { background:#fff3e0; color:#5d3a00; }
 
 /* 인원 카운터 */
 .counter-row { display:flex; align-items:center; gap:10px; }
 .counter-val { flex:1; border:1.5px solid #dde4ef; border-radius:9px; padding:11px 13px; font-size:18px; font-weight:700; color:#1D5BA6; text-align:center; background:#fafbfd; }
-.cnt-btn { width:40px; height:40px; flex-shrink:0; border:1.5px solid #dde4ef; border-radius:9px; background:#f0f4fa; font-size:20px; color:#1D5BA6; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:300; line-height:1; }
+.cnt-btn { width:40px; height:40px; flex-shrink:0; border:1.5px solid #dde4ef; border-radius:9px; background:#f0f4fa; font-size:20px; color:#1D5BA6; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .cnt-btn:hover { background:#e8f0fb; border-color:#1D5BA6; }
 .hint { font-size:11px; color:#aab; margin-top:5px; }
 
-/* 장비 멀티 선택 */
+/* 장비 */
 .equip-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; min-height:32px; }
 .equip-chip { display:inline-flex; align-items:center; gap:5px; background:#e8f0fb; color:#1D5BA6; border:1.5px solid #1D5BA6; border-radius:20px; padding:4px 10px 4px 12px; font-size:12px; font-weight:600; }
-.equip-chip .rm { cursor:pointer; font-size:14px; color:#5BA4CF; font-weight:400; }
+.equip-chip .rm { cursor:pointer; font-size:14px; color:#5BA4CF; }
 .equip-chip .rm:hover { color:#e05; }
 .equip-empty { font-size:12px; color:#aab; padding:4px 0; }
 
 /* 버튼 */
 .btn-row { display:flex; gap:10px; margin-top:16px; }
-.btn { flex:1; padding:14px; border:none; border-radius:12px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; transition:all .15s; letter-spacing:-.2px; }
+.btn { flex:1; padding:14px; border:none; border-radius:12px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; transition:all .15s; }
 .btn-preview { background:#e8f0fb; color:#1D5BA6; }
 .btn-export  { background:#1D5BA6; color:#fff; }
 .btn-export:hover { background:#1549a0; }
@@ -83,20 +91,16 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 .modal-sheet { background:#fff; border-radius:20px 20px 0 0; width:100%; max-width:480px; max-height:92vh; overflow-y:auto; padding:20px 18px 32px; box-shadow:0 -8px 40px rgba(0,0,0,.15); }
 .modal-handle { width:40px; height:4px; background:#dde4ef; border-radius:2px; margin:0 auto 16px; }
 .modal-title { font-size:16px; font-weight:700; color:#1a1a2e; text-align:center; margin-bottom:18px; padding-bottom:14px; border-bottom:1.5px solid #f0f4fa; }
-
-/* 공사일보 문서 */
-.doc-wrap { font-family:-apple-system,'Apple SD Gothic Neo',sans-serif; }
 .doc-header { text-align:center; margin-bottom:16px; }
 .doc-header h2 { font-size:20px; font-weight:800; color:#1D5BA6; letter-spacing:6px; }
 .doc-header p { font-size:11px; color:#888; margin-top:4px; }
 .doc-table { width:100%; border-collapse:collapse; font-size:13px; }
 .doc-table th,.doc-table td { border:1px solid #ccd; padding:9px 11px; vertical-align:top; text-align:left; }
 .doc-table th { background:#1D5BA6; color:#fff; font-weight:600; white-space:nowrap; width:88px; }
-.doc-table .sec-hd td { background:#e8f0fb; color:#1D5BA6; font-weight:700; font-size:12px; letter-spacing:.5px; }
-.modal-pdf { margin-top:10px; width:100%; padding:12px; background:#1D5BA6; border:none; border-radius:10px; font-size:14px; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; }
+.doc-table .sec-hd td { background:#e8f0fb; color:#1D5BA6; font-weight:700; font-size:12px; }
+.modal-pdf   { margin-top:10px; width:100%; padding:12px; background:#1D5BA6; border:none; border-radius:10px; font-size:14px; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; }
 .modal-close { margin-top:8px; width:100%; padding:12px; background:#f0f4fa; border:none; border-radius:10px; font-size:14px; font-weight:600; color:#555; cursor:pointer; font-family:inherit; }
 
-/* 인쇄 */
 @media print {
   body * { visibility:hidden; }
   #printArea,#printArea * { visibility:visible; }
@@ -128,11 +132,11 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
     <select id="site"><option value="P4 Ph2(FAB)">P4 Ph2(FAB)</option></select>
   </div>
 
-  <!-- 2. 작성일자 -->
+  <!-- 2. 작성일자 — 선택 즉시 공정·출역 자동 로드 -->
   <div class="card">
     <div class="card-label"><span class="num">2</span> 작성일자</div>
     <button id="dateDisplay" onclick="openPicker()">
-      <span id="dateText" class="placeholder">날짜를 선택하세요</span>
+      <span id="dateText" class="placeholder">날짜를 선택하면 자동으로 불러와요</span>
       <span>📅</span>
     </button>
   </div>
@@ -148,14 +152,15 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
     </select>
   </div>
 
-  <!-- 4. 금일 작업 내용 -->
+  <!-- 4. 금일 작업 내용 — 날짜 선택 시 자동 로드 -->
   <div class="card">
     <div class="card-label"><span class="num">4</span> 금일 작업 내용</div>
-    <div class="load-row">
-      <button class="btn-load" id="btn-work" onclick="loadWork()">⬇ Workspace에서 불러오기</button>
-      <span class="load-status" id="st-work"></span>
+    <div id="work-loading" style="display:none">
+      <div class="loading-badge"><span class="spin">⟳</span> 공정 탭에서 불러오는 중...</div>
     </div>
-    <textarea id="todayWork" placeholder="날짜 선택 후 불러오기 버튼을 눌러주세요"></textarea>
+    <div id="prog-result" class="prog-result"></div>
+    <div id="st-work" class="load-status"></div>
+    <textarea id="todayWork" placeholder="날짜를 선택하면 공정 탭 체크 물량이 자동으로 채워져요&#10;(필요 시 직접 수정 가능)" style="margin-top:10px"></textarea>
   </div>
 
   <!-- 5. 명일 예정 작업 -->
@@ -164,19 +169,19 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
     <textarea id="tomorrowWork" placeholder="예) FCU 설치 (815~819호기, 5대)&#10;E/V #13 사용 (23:00~01:00)"></textarea>
   </div>
 
-  <!-- 6. 투입 인원 현황 -->
+  <!-- 6. 투입 인원 현황 — 날짜 선택 시 자동 로드 -->
   <div class="card">
     <div class="card-label"><span class="num">6</span> 투입 인원 현황</div>
-    <div class="load-row">
-      <button class="btn-load" id="btn-att" onclick="loadAtt()">⬇ Workspace에서 불러오기</button>
-      <span class="load-status" id="st-att"></span>
+    <div id="att-loading" style="display:none">
+      <div class="loading-badge"><span class="spin">⟳</span> 출역 현황 불러오는 중...</div>
     </div>
-    <div class="counter-row">
+    <div class="counter-row" style="margin-top:4px">
       <button class="cnt-btn" onclick="adj(-1)">−</button>
       <div class="counter-val" id="headcount">0</div>
       <button class="cnt-btn" onclick="adj(1)">+</button>
     </div>
-    <p class="hint" id="worker-hint">※ Workspace 근태 탭 출역 기준</p>
+    <p class="hint" id="worker-hint">※ 날짜 선택 시 자동 로드됩니다</p>
+    <div id="st-att" class="load-status"></div>
   </div>
 
   <!-- 7. 사용 장비 -->
@@ -233,113 +238,188 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 <div id="printArea" style="display:none;"></div>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ALL_SCHEDULE, WORKERS, FIREBASE_CONFIG } from './data.js';
 
-// Firebase 초기화
 const app = initializeApp(FIREBASE_CONFIG);
 const db  = getFirestore(app);
 
-// ── 날짜 ──
+// 구역 정의
+const ZONES = [
+  {id:'fiz', name:'3F FIZ',       total:39,  eqs:Array.from({length:39},(_,i)=>String(801+i))},
+  {id:'xob', name:'X-OB',         total:19,  eqs:['861','862','863','864','865','866','867','868','869','870','871','872','873','874','875','876','877','878','879']},
+  {id:'c3',  name:'복합3동',       total:14,  eqs:['351','352','353','354','355','356','357','358','359','360','361','362','363','364']},
+  {id:'c4',  name:'복합4동',       total:14,  eqs:['302A','302B','302C','302D','302E','302F','302G','302H','302I','302J','302K','302L','302M','302N']},
+  {id:'wob', name:'W-OB',         total:81,  eqs:Array.from({length:81},(_,i)=>'W-'+(101+i))},
+  {id:'mfr', name:'2F 제조부속실', total:16,  eqs:['801','802','811','812','813','814','815','816','817','818','819','820','821','822','823','824']},
+];
+const CHECK_COLS = ['반입','입고검사','내진스토퍼','다이크','실링','동판','결선','시공검측'];
+
+// ── 날짜 피커 ──
 const DAYS = ['일','월','화','수','목','금','토'];
-let pYear, pMonth, selDate = null, selKey = null;
+let pYear, pMonth, selDate=null, selKey=null;
 
 window.openPicker = () => {
-  const n = selDate || new Date();
-  pYear = n.getFullYear(); pMonth = n.getMonth();
-  renderPicker();
-  document.getElementById('datePopup').classList.add('open');
+  const n=selDate||new Date(); pYear=n.getFullYear(); pMonth=n.getMonth();
+  renderPicker(); document.getElementById('datePopup').classList.add('open');
 };
 window.closePicker = () => document.getElementById('datePopup').classList.remove('open');
 window.chgMonth = d => {
-  pMonth += d;
-  if(pMonth<0){pMonth=11;pYear--;} if(pMonth>11){pMonth=0;pYear++;}
-  renderPicker();
+  pMonth+=d; if(pMonth<0){pMonth=11;pYear--;} if(pMonth>11){pMonth=0;pYear++;} renderPicker();
 };
-function renderPicker() {
-  document.getElementById('dpTitle').textContent = `${pYear}년 ${pMonth+1}월`;
-  const first = new Date(pYear,pMonth,1).getDay();
-  const last  = new Date(pYear,pMonth+1,0).getDate();
-  const today = new Date();
-  let h = '';
+function renderPicker(){
+  document.getElementById('dpTitle').textContent=`${pYear}년 ${pMonth+1}월`;
+  const first=new Date(pYear,pMonth,1).getDay(), last=new Date(pYear,pMonth+1,0).getDate(), today=new Date();
+  let h='';
   for(let i=0;i<first;i++) h+=`<div class="dp-day empty"></div>`;
   for(let d=1;d<=last;d++){
-    const isTd = today.getFullYear()===pYear&&today.getMonth()===pMonth&&today.getDate()===d;
-    const isSel = selDate&&selDate.getFullYear()===pYear&&selDate.getMonth()===pMonth&&selDate.getDate()===d;
+    const isTd=today.getFullYear()===pYear&&today.getMonth()===pMonth&&today.getDate()===d;
+    const isSel=selDate&&selDate.getFullYear()===pYear&&selDate.getMonth()===pMonth&&selDate.getDate()===d;
     const dow=(first+d-1)%7;
-    let c='dp-day';
-    if(dow===0)c+=' sun'; if(dow===6)c+=' sat';
-    if(isTd)c+=' today'; if(isSel)c+=' selected';
+    let c='dp-day'; if(dow===0)c+=' sun'; if(dow===6)c+=' sat'; if(isTd)c+=' today'; if(isSel)c+=' selected';
     h+=`<div class="${c}" onclick="pickDay(${d})">${d}</div>`;
   }
-  document.getElementById('dpDays').innerHTML = h;
+  document.getElementById('dpDays').innerHTML=h;
 }
-window.pickDay = d => {
-  selDate = new Date(pYear,pMonth,d);
+
+// ── 날짜 선택 → 자동 로드 ──
+window.pickDay = async d => {
+  selDate=new Date(pYear,pMonth,d);
   const m=String(pMonth+1).padStart(2,'0'), dd=String(d).padStart(2,'0');
-  selKey = `${pYear}-${m}-${dd}`;
-  document.getElementById('dateText').textContent = `${pYear}년 ${m}월 ${dd}일 ${DAYS[selDate.getDay()]}요일`;
+  selKey=`${pYear}-${m}-${dd}`;
+  document.getElementById('dateText').textContent=`${pYear}년 ${m}월 ${dd}일 ${DAYS[selDate.getDay()]}요일`;
   document.getElementById('dateText').classList.remove('placeholder');
-  document.getElementById('st-work').textContent='날짜 선택됨'; document.getElementById('st-work').className='load-status ok';
-  document.getElementById('st-att').textContent='날짜 선택됨';  document.getElementById('st-att').className='load-status ok';
   closePicker();
+  // 날짜 선택과 동시에 두 가지 자동 로드
+  await Promise.all([ loadProgress(), loadAttendance() ]);
 };
 
-// ── 4. 금일 작업 불러오기 (ALL_SCHEDULE from data.js) ──
-window.loadWork = () => {
-  if(!selKey){ alert('날짜를 먼저 선택해 주세요!'); return; }
-  const items = ALL_SCHEDULE[selKey] || [];
-  const lines = items
-    .filter(i=>i.tag!=='leave')
-    .map(i=>(i.time?`[${i.time}] `:'')+i.text);
-  document.getElementById('todayWork').value = lines.length ? lines.join('\n') : '(해당 날짜 일정 없음)';
-  const st = document.getElementById('st-work');
-  st.textContent = lines.length ? `✓ ${lines.length}건 로드됨` : '일정 없음';
-  st.className = 'load-status ' + (lines.length?'ok':'err');
-};
+// ── 4. 공정 탭 체크 물량 자동 로드 ──
+async function loadProgress(){
+  document.getElementById('work-loading').style.display='block';
+  document.getElementById('prog-result').innerHTML='';
+  document.getElementById('st-work').textContent='';
+  document.getElementById('todayWork').value='';
 
-// ── 6. 투입 인원 불러오기 (Firebase worker_attendance) ──
-window.loadAtt = async () => {
-  if(!selKey){ alert('날짜를 먼저 선택해 주세요!'); return; }
-  const btn=document.getElementById('btn-att'), st=document.getElementById('st-att');
-  btn.disabled=true; st.textContent='Firebase 조회 중...'; st.className='load-status';
+  try {
+    // Firestore: progress_checks_{dateKey} 컬렉션, 문서 ID = zoneId
+    const colRef = collection(db, `progress_checks_${selKey}`);
+    const snap   = await getDocs(colRef);
+
+    // zone별 체크 맵 구성
+    const dayChecks = {}; // { zoneId: { '801_반입': true, ... } }
+    snap.forEach(docSnap => {
+      dayChecks[docSnap.id] = docSnap.data().checks || {};
+    });
+
+    // 구역·단계별로 집계
+    const summary = []; // { zoneName, steps: { 반입:[호기...], 입고검사:[...], ... } }
+    let totalCount = 0;
+
+    ZONES.forEach(zone => {
+      const zc = dayChecks[zone.id] || {};
+      const steps = {};
+      CHECK_COLS.forEach(col => {
+        const items = zone.eqs.filter(eq => zc[`${eq}_${col}`]);
+        if(items.length > 0){ steps[col] = items; totalCount += items.length; }
+      });
+      if(Object.keys(steps).length > 0) summary.push({ zone, steps });
+    });
+
+    // UI — 구역 카드
+    const resultEl = document.getElementById('prog-result');
+    if(summary.length === 0){
+      resultEl.innerHTML='<div style="font-size:12px;color:#aab;padding:4px 0">해당 날짜에 체크된 공정 없음</div>';
+      document.getElementById('st-work').textContent='체크된 공정 없음';
+      document.getElementById('st-work').className='load-status err';
+    } else {
+      resultEl.innerHTML = summary.map(({zone,steps})=>`
+        <div class="prog-zone-row">
+          <div class="prog-zone-name">📍 ${zone.name}</div>
+          <div class="prog-steps">
+            ${Object.entries(steps).map(([col,eqs])=>`
+              <span class="prog-step-chip chip-${col}">${col} ${eqs.length}개</span>
+            `).join('')}
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:5px;line-height:1.5">
+            ${Object.entries(steps).map(([col,eqs])=>`${col}: ${formatEqRange(eqs)}`).join(' / ')}
+          </div>
+        </div>`).join('');
+
+      // textarea 자동 채우기
+      const textLines = summary.map(({zone,steps})=>{
+        const detail = Object.entries(steps)
+          .map(([col,eqs])=>`${col} ${eqs.length}개 (${formatEqRange(eqs)})`)
+          .join(', ');
+        return `[${zone.name}] ${detail}`;
+      });
+      document.getElementById('todayWork').value = textLines.join('\n');
+      document.getElementById('st-work').textContent=`✓ 총 ${totalCount}건 체크 항목 로드됨`;
+      document.getElementById('st-work').className='load-status ok';
+    }
+  } catch(e) {
+    console.error(e);
+    document.getElementById('st-work').textContent='Firebase 오류 — 수동 입력해 주세요';
+    document.getElementById('st-work').className='load-status err';
+  }
+  document.getElementById('work-loading').style.display='none';
+}
+
+// 호기 번호를 범위 형식으로 포맷 (연속이면 ~로, 비연속이면 쉼표)
+function formatEqRange(eqs){
+  if(eqs.length===0) return '';
+  // 숫자 호기인지 확인
+  const nums = eqs.map(e=>parseInt(e)).filter(n=>!isNaN(n));
+  if(nums.length===eqs.length && nums.length>0){
+    nums.sort((a,b)=>a-b);
+    const ranges=[]; let s=nums[0],e=nums[0];
+    for(let i=1;i<nums.length;i++){
+      if(nums[i]===e+1){ e=nums[i]; }
+      else { ranges.push(s===e?String(s):`${s}~${e}`); s=e=nums[i]; }
+    }
+    ranges.push(s===e?String(s):`${s}~${e}`);
+    return ranges.join(', ')+'호기';
+  }
+  return eqs.join(', ');
+}
+
+// ── 6. 출역 인원 자동 로드 ──
+async function loadAttendance(){
+  document.getElementById('att-loading').style.display='block';
   try {
     const snap = await getDoc(doc(db,'worker_attendance',selKey));
     const checks = snap.exists() ? (snap.data().checks||[]) : [];
-    document.getElementById('headcount').textContent = checks.length;
-    const names = checks.map(id=>{ const w=WORKERS.find(w=>w.id===id); return w?w.name+(w.role?' '+w.role:''):id; });
-    document.getElementById('worker-hint').textContent = names.length ? `출역: ${names.join(', ')}` : '※ 출역 체크된 인원 없음';
-    st.textContent = `✓ ${checks.length}명 확인`; st.className = 'load-status ok';
+    document.getElementById('headcount').textContent=checks.length;
+    const names=checks.map(id=>{ const w=WORKERS.find(w=>w.id===id); return w?w.name+(w.role?' '+w.role:''):id; });
+    document.getElementById('worker-hint').textContent=names.length?`출역: ${names.join(', ')}`:'※ 출역 체크된 인원 없음';
+    document.getElementById('st-att').textContent=`✓ ${checks.length}명 확인`;
+    document.getElementById('st-att').className='load-status ok';
   } catch(e) {
-    st.textContent='Firebase 오류 — 수동 입력해 주세요'; st.className='load-status err';
+    document.getElementById('st-att').textContent='Firebase 오류 — 수동 입력해 주세요';
+    document.getElementById('st-att').className='load-status err';
   }
-  btn.disabled=false;
-};
+  document.getElementById('att-loading').style.display='none';
+}
 
 // ── 인원 수동 조정 ──
 window.adj = d => {
   const el=document.getElementById('headcount');
-  const v=parseInt(el.textContent)+d;
-  if(v>=0) el.textContent=v;
+  const v=parseInt(el.textContent)+d; if(v>=0) el.textContent=v;
 };
 
 // ── 장비 ──
 let equips=[];
-window.addEquip = sel => {
-  const v=sel.value; if(!v) return;
-  if(!equips.includes(v)){ equips.push(v); renderChips(); }
-  sel.value='';
-};
-window.rmEquip = v => { equips=equips.filter(e=>e!==v); renderChips(); };
+window.addEquip=sel=>{ const v=sel.value; if(!v) return; if(!equips.includes(v)){equips.push(v);renderChips();} sel.value=''; };
+window.rmEquip=v=>{ equips=equips.filter(e=>e!==v); renderChips(); };
 function renderChips(){
   const el=document.getElementById('equipChips');
-  el.innerHTML = equips.length
-    ? equips.map(v=>`<span class="equip-chip">${v}<span class="rm" onclick="rmEquip('${v}')">×</span></span>`).join('')
-    : '<span class="equip-empty">장비를 선택하세요</span>';
+  el.innerHTML=equips.length
+    ?equips.map(v=>`<span class="equip-chip">${v}<span class="rm" onclick="rmEquip('${v}')">×</span></span>`).join('')
+    :'<span class="equip-empty">장비를 선택하세요</span>';
 }
 
-// ── 데이터 수집 ──
+// ── 데이터 수집 & 문서 생성 ──
 function collect(){
   return {
     site:     document.getElementById('site').value,
@@ -349,12 +429,12 @@ function collect(){
     tomorrow: document.getElementById('tomorrowWork').value.trim(),
     count:    document.getElementById('headcount').textContent,
     hint:     document.getElementById('worker-hint').textContent,
-    equip:    equips.length ? equips.join(', ') : '—',
+    equip:    equips.length?equips.join(', '):'—',
     remarks:  document.getElementById('remarks').value.trim(),
   };
 }
 function buildDoc(d){
-  return `<div class="doc-wrap">
+  return `<div>
     <div class="doc-header"><h2>공 사 일 보</h2><p>${d.site} · 귀뚜라미범양냉방</p></div>
     <table class="doc-table">
       <tr><th>현장명</th><td>${d.site}</td></tr>
@@ -372,23 +452,18 @@ function buildDoc(d){
   </div>`;
 }
 
-window.openPreview = () => {
-  document.getElementById('previewContent').innerHTML = buildDoc(collect());
-  document.getElementById('previewModal').classList.add('open');
-};
-window.closePreview = () => document.getElementById('previewModal').classList.remove('open');
-
-window.savePDF = () => {
-  const d=collect();
-  const pa=document.getElementById('printArea');
+window.openPreview=()=>{ document.getElementById('previewContent').innerHTML=buildDoc(collect()); document.getElementById('previewModal').classList.add('open'); };
+window.closePreview=()=>document.getElementById('previewModal').classList.remove('open');
+window.savePDF=()=>{
+  const d=collect(), pa=document.getElementById('printArea');
   pa.style.display='block'; pa.innerHTML=buildDoc(d);
   const ot=document.title;
-  if(selDate){ const y=selDate.getFullYear(),m=String(selDate.getMonth()+1).padStart(2,'0'),dd=String(selDate.getDate()).padStart(2,'0'); document.title=`${y}${m}${dd}_공사일보`; }
+  if(selDate){const y=selDate.getFullYear(),m=String(selDate.getMonth()+1).padStart(2,'0'),dd=String(selDate.getDate()).padStart(2,'0');document.title=`${y}${m}${dd}_공사일보`;}
   setTimeout(()=>{ window.print(); pa.style.display='none'; document.title=ot; },150);
 };
 
-document.getElementById('datePopup').addEventListener('click',e=>{ if(e.target===document.getElementById('datePopup')) closePicker(); });
-document.getElementById('previewModal').addEventListener('click',e=>{ if(e.target===document.getElementById('previewModal')) closePreview(); });
+document.getElementById('datePopup').addEventListener('click',e=>{ if(e.target===document.getElementById('datePopup'))closePicker(); });
+document.getElementById('previewModal').addEventListener('click',e=>{ if(e.target===document.getElementById('previewModal'))closePreview(); });
 </script>
 </body>
 </html>
