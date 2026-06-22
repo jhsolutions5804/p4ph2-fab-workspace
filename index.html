@@ -996,8 +996,18 @@ function switchTab(name,btn){
   if(name==='attend')renderAttend();
 }
 
-// INIT
-initToday();
+// INIT — Firebase module이 준비된 후 initToday 호출
+// type="module" 스크립트는 defer와 동일하게 동작하므로
+// 일반 스크립트에서 window._fbSubscribeReports가 아직 없을 수 있음
+// → 짧은 polling으로 Firebase 준비 후 실행
+function waitForFirebaseAndInit() {
+  if (window._fbSubscribeReports && window._fbSubscribeChecks) {
+    initToday();
+  } else {
+    setTimeout(waitForFirebaseAndInit, 50);
+  }
+}
+waitForFirebaseAndInit();
 renderProgress();
 
 // 리포트 입력창 Enter 키
