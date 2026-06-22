@@ -265,7 +265,21 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 
     <!-- PROGRESS -->
     <div id="tab-progress" style="display:none">
-      <div class="ref-date">기준일: 2026-06-19</div>
+      <!-- 날짜 네비게이터 -->
+      <div class="today-nav" style="margin-bottom:10px">
+        <button class="nav-arrow" onclick="changeProgDay(-1)">‹</button>
+        <div style="flex:1;text-align:center">
+          <div class="today-title" id="prog-date-label">—</div>
+          <div style="font-size:11px;color:#86868b;margin-top:2px" id="prog-week-label">—</div>
+        </div>
+        <button class="nav-arrow" onclick="changeProgDay(1)">›</button>
+        <button onclick="goProgToday()" style="font-size:11px;font-weight:600;color:#1D5BA6;background:#e8f0fb;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap;margin-left:4px">오늘</button>
+      </div>
+      <!-- 읽기전용 배너 -->
+      <div id="prog-readonly-banner" style="display:none;align-items:center;gap:6px;background:#fff8e8;border:1px solid #ffe082;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#7a5c00">
+        📅 과거 기록 조회 중 — 체크는 오늘 날짜에서만 가능해요
+      </div>
+      <div class="ref-date" id="prog-ref-date"></div>
       <div class="total-card">
         <div class="stat-item"><span class="stat-label">전체 물량</span><span class="stat-val">183대</span></div>
         <div class="stat-item"><span class="stat-label">전체 공정율</span><span class="stat-val blue" id="total-pct">—</span></div>
@@ -513,6 +527,84 @@ function applyChecksToUI(dateKey, checks) {
   updateProgress();
 }
 
+// ===== 공정 체크리스트 Firebase 연동 =====
+// Firestore: progress_checks_{dateKey} 컬렉션, 문서ID: zoneId
+// 구조: { checks: { "801_반입": true, ... } }
+
+// 과거 데이터 (3F FIZ 누적 체크 상태)
+const PAST_PROGRESS = {
+  '2026-06-17': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true } },
+  '2026-06-18': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true,'807_반입':true,'808_반입':true,'809_반입':true,'820_반입':true,'821_반입':true,'822_반입':true,'823_반입':true,'801_입고검사':true,'802_입고검사':true,'803_입고검사':true,'804_입고검사':true,'805_입고검사':true,'806_입고검사':true } },
+  '2026-06-19': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true,'807_반입':true,'808_반입':true,'809_반입':true,'820_반입':true,'821_반입':true,'822_반입':true,'823_반입':true,'824_반입':true,'825_반입':true,'826_반입':true,'827_반입':true,'828_반입':true,'829_반입':true,'830_반입':true,'801_입고검사':true,'802_입고검사':true,'803_입고검사':true,'804_입고검사':true,'805_입고검사':true,'806_입고검사':true,'807_입고검사':true,'808_입고검사':true,'809_입고검사':true,'820_입고검사':true,'821_입고검사':true,'822_입고검사':true,'823_입고검사':true } },
+  '2026-06-20': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true,'807_반입':true,'808_반입':true,'809_반입':true,'820_반입':true,'821_반입':true,'822_반입':true,'823_반입':true,'824_반입':true,'825_반입':true,'826_반입':true,'827_반입':true,'828_반입':true,'829_반입':true,'830_반입':true,'801_입고검사':true,'802_입고검사':true,'803_입고검사':true,'804_입고검사':true,'805_입고검사':true,'806_입고검사':true,'807_입고검사':true,'808_입고검사':true,'809_입고검사':true,'820_입고검사':true,'821_입고검사':true,'822_입고검사':true,'823_입고검사':true,'824_입고검사':true,'825_입고검사':true,'826_입고검사':true,'827_입고검사':true,'828_입고검사':true,'829_입고검사':true,'830_입고검사':true } },
+};
+
+let _progUnsubMap = {};
+
+// 날짜별 공정 체크 구독
+window._fbSubscribeProgress = async function(dateKey) {
+  // 이전 구독 전체 해제
+  Object.values(_progUnsubMap).forEach(fn => fn && fn());
+  _progUnsubMap = {};
+
+  // 과거 고정 데이터 있으면 Firebase 구독 불필요
+  if (PAST_PROGRESS[dateKey]) {
+    window._progCache = window._progCache || {};
+    window._progCache[dateKey] = PAST_PROGRESS[dateKey];
+    if (window._renderProgressUI) window._renderProgressUI();
+    return;
+  }
+
+  // 오늘/미래는 Firebase 실시간 구독
+  const { collection, onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const ZONE_IDS = ['fiz','xob','c3','c4','wob','mfr'];
+  window._progCache = window._progCache || {};
+  window._progCache[dateKey] = window._progCache[dateKey] || {};
+
+  ZONE_IDS.forEach(zid => {
+    const ref = doc(db, 'progress_checks_'+dateKey, zid);
+    _progUnsubMap[zid] = onSnapshot(ref, snap => {
+      window._progCache[dateKey] = window._progCache[dateKey] || {};
+      window._progCache[dateKey][zid] = snap.exists() ? (snap.data().checks || {}) : {};
+      if (window._renderProgressUI) window._renderProgressUI();
+    });
+  });
+};
+
+// 공정 체크 저장 (오늘만)
+window._fbSetProgCheck = async function(dateKey, zoneId, key, isDone) {
+  try {
+    const { doc, getDoc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const ref = doc(db, 'progress_checks_'+dateKey, zoneId);
+    const snap = await getDoc(ref);
+    const checks = snap.exists() ? (snap.data().checks || {}) : {};
+    if (isDone) checks[key] = true;
+    else delete checks[key];
+    await setDoc(ref, { checks, updatedAt: serverTimestamp() });
+    window._progCache = window._progCache || {};
+    window._progCache[dateKey] = window._progCache[dateKey] || {};
+    window._progCache[dateKey][zoneId] = checks;
+  } catch(e) {
+    console.error('공정 체크 저장 오류:', e);
+    // localStorage fallback
+    const lk = 'eq_ck_'+dateKey+'_'+zoneId;
+    const d = JSON.parse(localStorage.getItem(lk)||'{}');
+    if (isDone) d[key]=true; else delete d[key];
+    localStorage.setItem(lk, JSON.stringify(d));
+  }
+};
+
+// 공정 체크 읽기
+window._fbGetProgChecks = function(dateKey, zoneId) {
+  // 과거 고정 데이터
+  if (PAST_PROGRESS[dateKey]) return PAST_PROGRESS[dateKey][zoneId] || {};
+  // 캐시
+  if (window._progCache && window._progCache[dateKey] && window._progCache[dateKey][zoneId] !== undefined)
+    return window._progCache[dateKey][zoneId];
+  // localStorage fallback
+  try { return JSON.parse(localStorage.getItem('eq_ck_'+dateKey+'_'+zoneId)||'{}'); } catch(e) { return {}; }
+};
+
 </script>
 
 <script>
@@ -520,7 +612,7 @@ function applyChecksToUI(dateKey, checks) {
 const CHECK_COLS=['반입','입고검사','내진스토퍼','다이크','실링','동판','결선','시공검측'];
 const INSTALL_COLS=['내진스토퍼','다이크','실링','동판','결선'];
 const ZONES=[
-  {id:'fiz', name:'3F FIZ',       total:39, eqs:Array.from({length:39},(_,i)=>'FIZ-'+(801+i))},
+  {id:'fiz', name:'3F FIZ',       total:39, eqs:Array.from({length:39},(_,i)=>String(801+i))},
   {id:'xob', name:'X-OB',         total:19, eqs:['861','862','863','864','865','866','867','868','869','870','871','872','873','874','875','876','877','878','879']},
   {id:'c3',  name:'복합3동',       total:14, eqs:['351','352','353','354','355','356','357','358','359','360','361','362','363','364']},
   {id:'c4',  name:'복합4동',       total:14, eqs:['302A','302B','302C','302D','302E','302F','302G','302H','302I','302J','302K','302L','302M','302N']},
@@ -1035,8 +1127,29 @@ function hideDetail(){document.getElementById('cal-detail').style.display='none'
 function changeMonth(dir){curMonth+=dir;if(curMonth>11){curMonth=0;curYear++;}if(curMonth<0){curMonth=11;curYear--;}selectedKey=null;renderCal();}
 
 // ===== PROGRESS =====
-function getCksProg(zoneId){try{return JSON.parse(localStorage.getItem('eq_ck_'+zoneId)||'{}')}catch(e){return{}}}
-function saveCksProg(zoneId,data){try{localStorage.setItem('eq_ck_'+zoneId,JSON.stringify(data))}catch(e){}}
+let progDayOffset=0;
+function getProgDate(){const b=getAppToday();b.setDate(b.getDate()+progDayOffset);return b;}
+function isProgToday(){return progDayOffset===0;}
+window.changeProgDay=function(dir){progDayOffset+=dir;initProgress();};
+window.goProgToday=function(){progDayOffset=0;initProgress();};
+
+function initProgress(){
+  const d=getProgDate();
+  const days=['일','월','화','수','목','금','토'];
+  const dateKey=toKey(d);
+  document.getElementById('prog-date-label').textContent=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
+  document.getElementById('prog-week-label').textContent='W'+getWeekNum(d)+(isProgToday()?' · 오늘':'');
+  document.getElementById('prog-ref-date').textContent='기준일: '+dateKey;
+  document.getElementById('prog-readonly-banner').style.display=isProgToday()?'none':'flex';
+  if(window._fbSubscribeProgress)window._fbSubscribeProgress(dateKey);
+  renderProgress();
+}
+
+function getCksProg(zoneId){
+  const dateKey=toKey(getProgDate());
+  if(window._fbGetProgChecks)return window._fbGetProgChecks(dateKey,zoneId);
+  try{return JSON.parse(localStorage.getItem('eq_ck_'+dateKey+'_'+zoneId)||'{}')}catch(e){return{};}
+}
 
 function calcZone(z,cks){
   let zIn=0,zAn=0,zInstChecked=0,zChk=0,totalChecked=0;
@@ -1067,42 +1180,35 @@ function updateProgressGlobal(){
 }
 
 function buildCheckTable(z,cks){
+  const isToday=isProgToday();
   const colHeaders=CHECK_COLS.map(c=>`<th>${c}</th>`).join('');
   const rows=z.eqs.map(eq=>{
     const pct=Math.round(CHECK_COLS.filter(c=>cks[eq+'_'+c]).length/CHECK_COLS.length*100);
     const checks=CHECK_COLS.map(c=>{
       const done=!!cks[eq+'_'+c];
-      return`<td><div class="cbox${done?' done':''}" onclick="toggleCkProg('${z.id}','${eq}','${c}',this)"></div></td>`;
+      const ro=!isToday;
+      return`<td><div class="cbox${done?' done':''}${ro?' readonly':''}"${isToday?` onclick="toggleCkProg('${z.id}','${eq}','${c}',this)"`:''}></div></td>`;
     }).join('');
-    return`<tr>
-      <td><div>${eq}</div><div class="eq-pct">${pct}%</div><div class="eq-pct-bar"><div class="eq-pct-fill" style="width:${pct}%"></div></div></td>
-      ${checks}</tr>`;
+    return`<tr><td><div>${eq}</div><div class="eq-pct">${pct}%</div><div class="eq-pct-bar"><div class="eq-pct-fill" style="width:${pct}%"></div></div></td>${checks}</tr>`;
   }).join('');
   const sumCols=CHECK_COLS.map(c=>{
     const cnt=z.eqs.filter(eq=>cks[eq+'_'+c]).length;
     return`<td style="color:${cnt===z.total?'#2e7d32':'#1D5BA6'}">${cnt}/${z.total}</td>`;
   }).join('');
-  return`<table class="checklist-table">
-    <thead><tr><th>장비번호</th>${colHeaders}</tr></thead>
-    <tbody>${rows}<tr class="sum-row"><td>합계</td>${sumCols}</tr></tbody>
-  </table>`;
+  return`<table class="checklist-table"><thead><tr><th>장비번호</th>${colHeaders}</tr></thead><tbody>${rows}<tr class="sum-row"><td>합계</td>${sumCols}</tr></tbody></table>`;
 }
 
 function refreshZoneCard(id,cks){
   const z=ZONES.find(z=>z.id===id);if(!z)return;
   const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cks);
-  const card=document.getElementById('zone-'+id);
+  const card=document.getElementById('zone-'+id);if(!card)return;
   card.querySelector('.zone-pct-pill').textContent=pct+'%';
   const bars=card.querySelectorAll('.step-fill');
-  bars[0].style.width=(zIn/z.total*100)+'%';
-  bars[1].style.width=(zAn/z.total*100)+'%';
-  bars[2].style.width=instPct+'%';
-  bars[3].style.width=(zChk/z.total*100)+'%';
+  bars[0].style.width=(zIn/z.total*100)+'%';bars[1].style.width=(zAn/z.total*100)+'%';
+  bars[2].style.width=instPct+'%';bars[3].style.width=(zChk/z.total*100)+'%';
   const labels=card.querySelectorAll('.step-label');
-  labels[0].textContent='반입 '+zIn+'/'+z.total;
-  labels[1].textContent='입고검사 '+zAn+'/'+z.total;
-  labels[2].textContent='설치 '+zInstChecked+'/'+(z.total*INSTALL_COLS.length);
-  labels[3].textContent='시공검측 '+zChk+'/'+z.total;
+  labels[0].textContent='반입 '+zIn+'/'+z.total;labels[1].textContent='입고검사 '+zAn+'/'+z.total;
+  labels[2].textContent='설치 '+zInstChecked+'/'+(z.total*INSTALL_COLS.length);labels[3].textContent='시공검측 '+zChk+'/'+z.total;
   const sumCells=card.querySelectorAll('.sum-row td');
   CHECK_COLS.forEach((c,i)=>{
     const cnt=z.eqs.filter(eq=>cks[eq+'_'+c]).length;
@@ -1112,11 +1218,15 @@ function refreshZoneCard(id,cks){
 }
 
 window.toggleCkProg=function(zoneId,eq,col,el){
+  if(!isProgToday())return;
+  const dateKey=toKey(getProgDate());
   const cks=getCksProg(zoneId);
   const key=eq+'_'+col;
-  cks[key]=!cks[key];
-  saveCksProg(zoneId,cks);
-  el.classList.toggle('done',cks[key]);
+  const isDone=!cks[key];
+  if(isDone)cks[key]=true; else delete cks[key];
+  el.classList.toggle('done',isDone);
+  if(window._fbSetProgCheck)window._fbSetProgCheck(dateKey,zoneId,key,isDone);
+  else{try{localStorage.setItem('eq_ck_'+dateKey+'_'+zoneId,JSON.stringify(cks));}catch(e){}}
   const pct=Math.round(CHECK_COLS.filter(c=>cks[eq+'_'+c]).length/CHECK_COLS.length*100);
   const row=el.closest('tr');
   row.querySelector('.eq-pct').textContent=pct+'%';
@@ -1133,13 +1243,18 @@ window.toggleZone=function(id){
   cl.style.display=isOpen?'none':'block';
 };
 
+window._renderProgressUI=function(){renderProgress();};
+
 function renderProgress(){
-  const list=document.getElementById('zone-list');list.innerHTML='';
+  const list=document.getElementById('zone-list');if(!list)return;
+  const openIds=ZONES.filter(z=>{const c=document.getElementById('zone-'+z.id);return c&&c.classList.contains('open');}).map(z=>z.id);
+  list.innerHTML='';
   ZONES.forEach(z=>{
     const cks=getCksProg(z.id);
     const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cks);
+    const wasOpen=openIds.includes(z.id);
     const card=document.createElement('div');
-    card.className='zone-card';card.id='zone-'+z.id;
+    card.className='zone-card'+(wasOpen?' open':'');card.id='zone-'+z.id;
     card.innerHTML=`
       <div class="zone-header" onclick="toggleZone('${z.id}')">
         <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px">
@@ -1154,7 +1269,7 @@ function renderProgress(){
         <div><div class="step-bar"><div class="step-fill fill-inst" style="width:${instPct}%"></div></div><div class="step-label">설치 ${zInstChecked}/${z.total*INSTALL_COLS.length}</div></div>
         <div><div class="step-bar"><div class="step-fill" style="width:${(zChk/z.total*100).toFixed(0)}%;background:#7c3aed"></div></div><div class="step-label">시공검측 ${zChk}/${z.total}</div></div>
       </div>
-      <div class="checklist-wrap" id="cl-${z.id}" style="display:none">
+      <div class="checklist-wrap" id="cl-${z.id}" style="display:${wasOpen?'block':'none'}">
         ${buildCheckTable(z,cks)}
       </div>`;
     list.appendChild(card);
@@ -1199,7 +1314,7 @@ function switchTab(name,btn){
   btn.classList.add('active');
   if(name==='twoweek')renderTwoWeek();
   if(name==='calendar')initCal();
-  if(name==='progress')renderProgress();
+  if(name==='progress')initProgress();
   if(name==='attend')renderAttend();
 }
 
@@ -1208,14 +1323,14 @@ function switchTab(name,btn){
 // 일반 스크립트에서 window._fbSubscribeReports가 아직 없을 수 있음
 // → 짧은 polling으로 Firebase 준비 후 실행
 function waitForFirebaseAndInit() {
-  if (window._fbSubscribeReports && window._fbSubscribeChecks) {
+  if (window._fbSubscribeReports && window._fbSubscribeChecks && window._fbSubscribeProgress) {
     initToday();
   } else {
     setTimeout(waitForFirebaseAndInit, 50);
   }
 }
 waitForFirebaseAndInit();
-renderProgress();
+renderProgress(); // 공정 탭은 탭 클릭 시 initProgress()로 갱신
 
 // 리포트 입력창 Enter 키
 document.getElementById('report-input').addEventListener('keydown',e=>{
