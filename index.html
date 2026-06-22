@@ -84,6 +84,26 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#86868b}
 .legend-dot{width:8px;height:8px;border-radius:2px}
 
+/* ATTENDANCE */
+.att-range{font-size:11px;color:#86868b;margin-bottom:14px;text-align:center}
+.att-row{display:flex;align-items:center;padding:11px 14px;border-radius:10px;margin-bottom:6px;gap:12px}
+.att-row.work{background:#f5f5f7}
+.att-row.off{background:#ffeaea}
+.att-row.today-row{border:1.5px solid #1D5BA6;background:#f0f6ff}
+.att-date{min-width:80px;flex-shrink:0}
+.att-date-main{font-size:13px;font-weight:600;color:#1d1d1f}
+.att-date-sub{font-size:11px;color:#86868b;margin-top:1px}
+.att-status{flex:1}
+.att-status-label{font-size:13px;font-weight:600}
+.att-status-label.work{color:#1d1d1f}
+.att-status-label.off{color:#c0392b}
+.att-duty{font-size:11px;color:#86868b;margin-top:2px;line-height:1.4}
+.att-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
+.att-badge-work{background:#e8f0fb;color:#0a3d7a}
+.att-badge-off{background:#ffeaea;color:#7f1d1d}
+.att-badge-today{background:#1D5BA6;color:#fff}
+.att-today-marker{width:6px;height:6px;border-radius:50%;background:#1D5BA6;flex-shrink:0}
+
 /* PROGRESS */
 .ref-date{font-size:11px;color:#86868b;margin-bottom:12px;text-align:right}
 .total-card{background:#f5f5f7;border-radius:14px;padding:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
@@ -118,6 +138,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <button class="tab" onclick="switchTab('twoweek',this)">2주</button>
       <button class="tab" onclick="switchTab('calendar',this)">캘린더</button>
       <button class="tab" onclick="switchTab('progress',this)">공정</button>
+      <button class="tab" onclick="switchTab('attend',this)">근태</button>
     </div>
   </div>
 
@@ -158,6 +179,12 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         <div class="cal-detail-title" id="cal-detail-title"></div>
         <div id="cal-detail-body"></div>
       </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div id="tab-attend" style="display:none">
+      <div class="att-range" id="att-range"></div>
+      <div id="att-list"></div>
     </div>
 
     <!-- PROGRESS -->
@@ -591,8 +618,74 @@ function renderProgress(){
   document.getElementById('done-zones').textContent=doneZones;
 }
 
+// ATTENDANCE
+const OFF_DAYS={
+  '2026-06-28':true,
+  '2026-07-04':true,
+};
+// 토요일은 당직 단일슬롯 (근무 처리)
+const SAT_DUTY='당직 08~15시 (김종화 차장)';
+const DUTY={
+  day:  '현장 이경택 소장 / 사무실 김종화 차장',
+  eve:  '현장 김종화 차장 / 사무실 정다애 대리',
+  night:'현장 윤석원 과장 / 사무실 김종화 차장',
+};
+
+function renderAttend(){
+  const now=new Date();now.setHours(0,0,0,0);
+  const todayKey=toKey(now);
+  const days=['일','월','화','수','목','금','토'];
+  const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+  // 오늘 기준 -7 ~ +7 (총 15일)
+  const list=[];
+  for(let i=-7;i<=7;i++){
+    const d=new Date(now);d.setDate(now.getDate()+i);list.push(d);
+  }
+
+  const start=list[0],end=list[list.length-1];
+  document.getElementById('att-range').textContent=
+    (start.getMonth()+1)+'월 '+start.getDate()+'일 ~ '+(end.getMonth()+1)+'월 '+end.getDate()+'일';
+
+  const dow=list[0].getDay();
+  const el=document.getElementById('att-list');
+
+  el.innerHTML=list.map(d=>{
+    const key=toKey(d);
+    const isToday=key===todayKey;
+    const isSun=d.getDay()===0;
+    const isSat=d.getDay()===6;
+    const isOff=OFF_DAYS[key]||isSun;
+
+    let statusLabel,dutyText,badgeClass,rowClass;
+    if(isOff){
+      statusLabel='휴무';dutyText='';badgeClass='att-badge-off';rowClass='off';
+    } else if(isSat){
+      statusLabel='근무';dutyText=SAT_DUTY;badgeClass='att-badge-work';rowClass='work';
+    } else {
+      statusLabel='근무';
+      dutyText='Day: '+DUTY.day+'<br>Eve: '+DUTY.eve+'<br>Night: '+DUTY.night;
+      badgeClass='att-badge-work';rowClass='work';
+    }
+    if(isToday)badgeClass='att-badge-today';
+
+    return`<div class="att-row ${rowClass}${isToday?' today-row':''}">
+      ${isToday?'<div class="att-today-marker"></div>':''}
+      <div class="att-date">
+        <div class="att-date-main">${(d.getMonth()+1)}/${d.getDate()}(${days[d.getDay()]})</div>
+        <div class="att-date-sub">${months[d.getMonth()]}</div>
+      </div>
+      <div class="att-status">
+        <div class="att-status-label ${isOff?'off':'work'}">${statusLabel}</div>
+        ${dutyText?`<div class="att-duty">${dutyText}</div>`:''}
+      </div>
+      <span class="att-badge ${badgeClass}">${isToday?'오늘':statusLabel}</span>
+    </div>`;
+  }).join('');
+}
+
 function switchTab(name,btn){
-  ['today','twoweek','calendar','progress'].forEach(t=>{
+  ['today','twoweek','calendar','progress','attend'].forEach(t=>{
     document.getElementById('tab-'+t).style.display=t===name?'block':'none';
   });
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -600,6 +693,7 @@ function switchTab(name,btn){
   if(name==='twoweek')renderTwoWeek();
   if(name==='calendar')initCal();
   if(name==='progress')renderProgress();
+  if(name==='attend')renderAttend();
 }
 
 // INIT
@@ -608,3 +702,4 @@ renderProgress();
 </script>
 </body>
 </html>
+
