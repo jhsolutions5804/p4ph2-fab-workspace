@@ -124,18 +124,42 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .total-card{background:#f5f5f7;border-radius:14px;padding:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
 .stat-item{display:flex;flex-direction:column;gap:2px}
 .stat-label{font-size:11px;color:#86868b}
-.stat-val{font-size:22px;font-weight:600;color:#1d1d1f}
-.pjt-zone{margin-bottom:16px}
-.pjt-zone-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
-.pjt-zone-name{font-size:13px;color:#3a3a3a;font-weight:500}
-.pjt-zone-pct{font-size:13px;font-weight:600;color:#1d1d1f}
-.pjt-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.step-bar{height:7px;border-radius:4px;background:#e5e5e5;overflow:hidden}
-.step-fill{height:100%;border-radius:4px;transition:width 0.5s ease}
-.step-fill-in{background:#1D5BA6}
-.step-fill-an{background:#5BA4CF}
-.step-fill-inst{background:#b5d4f4}
-.step-label{font-size:10px;color:#86868b;margin-top:4px;text-align:center}
+.stat-val{font-size:22px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px}
+.stat-val.blue{color:#1D5BA6}
+/* 섹터 카드 */
+.zone-card{border:1px solid #e5e5e5;border-radius:14px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.15s}
+.zone-card.open{box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+.zone-header{display:flex;align-items:center;padding:13px 14px;cursor:pointer;gap:10px;background:#fff;-webkit-user-select:none;user-select:none}
+.zone-header:active{background:#f5f5f7}
+.zone-name{font-size:14px;font-weight:600;color:#1d1d1f;flex:1}
+.zone-sub{font-size:11px;color:#86868b;font-weight:400}
+.zone-pct-pill{font-size:12px;font-weight:700;color:#1D5BA6;background:#e8f0fb;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.zone-chevron{font-size:16px;color:#86868b;transition:transform 0.2s;flex-shrink:0}
+.zone-card.open .zone-chevron{transform:rotate(180deg)}
+.zone-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:0 14px 12px;background:#fff}
+.step-bar{height:5px;border-radius:3px;background:#e5e5e5;overflow:hidden}
+.step-fill{height:100%;border-radius:3px;transition:width 0.3s}
+.fill-in{background:#1D5BA6}
+.fill-an{background:#5BA4CF}
+.fill-inst{background:#2e7d32}
+.step-label{font-size:9px;color:#86868b;margin-top:3px;text-align:center}
+/* 체크판 */
+.checklist-wrap{border-top:1px solid #f0f0f0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.checklist-table{width:100%;border-collapse:collapse;min-width:500px}
+.checklist-table th{font-size:10px;font-weight:700;color:#86868b;padding:8px 6px;text-align:center;background:#f9f9fb;border-bottom:1px solid #e5e5e5;white-space:nowrap}
+.checklist-table th:first-child{text-align:left;padding-left:12px;min-width:72px}
+.checklist-table td{padding:7px 6px;text-align:center;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+.checklist-table td:first-child{text-align:left;padding-left:12px;font-size:12px;font-weight:600;color:#1d1d1f;white-space:nowrap}
+.checklist-table tr:last-child td{border-bottom:none}
+.checklist-table tr:hover td{background:#fafafa}
+.cbox{width:20px;height:20px;border-radius:5px;border:1.5px solid #d1d1d6;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.12s}
+.cbox.done{background:#1D5BA6;border-color:#1D5BA6}
+.cbox.done::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.eq-pct{font-size:10px;font-weight:700;color:#1d1d1f;min-width:32px;text-align:center}
+.eq-pct-bar{height:3px;border-radius:2px;background:#e5e5e5;margin-top:2px;overflow:hidden}
+.eq-pct-fill{height:100%;border-radius:2px;background:#1D5BA6;transition:width 0.3s}
+.sum-row td{background:#f5f5f7;font-size:11px;font-weight:700;color:#1D5BA6;border-top:2px solid #e5e5e5}
+.sum-row td:first-child{color:#86868b}
 
 /* ATTENDANCE */
 .att-range{font-size:11px;color:#86868b;margin-bottom:14px;text-align:center}
@@ -244,14 +268,15 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <div class="ref-date">기준일: 2026-06-19</div>
       <div class="total-card">
         <div class="stat-item"><span class="stat-label">전체 물량</span><span class="stat-val">183대</span></div>
-        <div class="stat-item"><span class="stat-label">전체 공정율</span><span class="stat-val" id="total-pct">—</span></div>
+        <div class="stat-item"><span class="stat-label">전체 공정율</span><span class="stat-val blue" id="total-pct">—</span></div>
         <div class="stat-item"><span class="stat-label">누적 반입</span><span class="stat-val" id="total-in">—</span></div>
         <div class="stat-item"><span class="stat-label">누적 설치</span><span class="stat-val" id="total-inst">—</span></div>
       </div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#1D5BA6"></span>반입</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#5BA4CF"></span>안착</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#b5d4f4"></span>설치</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#5BA4CF"></span>입고검사</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2e7d32"></span>설치</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#7c3aed"></span>시공검측</span>
       </div>
       <div id="zone-list"></div>
     </div>
@@ -492,13 +517,15 @@ function applyChecksToUI(dateKey, checks) {
 
 <script>
 // ===== 공정 데이터 =====
+const CHECK_COLS=['반입','입고검사','내진스토퍼','다이크','실링','동판','결선','시공검측'];
+const INSTALL_COLS=['내진스토퍼','다이크','실링','동판','결선'];
 const ZONES=[
-  {name:'3F FIZ',total:39,반입:20,안착:20,설치:0},
-  {name:'X-OB',total:19,반입:0,안착:0,설치:0},
-  {name:'복합3동',total:14,반입:0,안착:0,설치:0},
-  {name:'복합4동',total:14,반입:0,안착:0,설치:0},
-  {name:'W-OB',total:81,반입:0,안착:0,설치:0},
-  {name:'2F 제조부속실',total:16,반입:0,안착:0,설치:0},
+  {id:'fiz', name:'3F FIZ',       total:39, eqs:Array.from({length:39},(_,i)=>'FIZ-'+(801+i))},
+  {id:'xob', name:'X-OB',         total:19, eqs:['861','862','863','864','865','866','867','868','869','870','871','872','873','874','875','876','877','878','879']},
+  {id:'c3',  name:'복합3동',       total:14, eqs:['351','352','353','354','355','356','357','358','359','360','361','362','363','364']},
+  {id:'c4',  name:'복합4동',       total:14, eqs:['302A','302B','302C','302D','302E','302F','302G','302H','302I','302J','302K','302L','302M','302N']},
+  {id:'wob', name:'W-OB',         total:81, eqs:Array.from({length:81},(_,i)=>'W-'+(101+i))},
+  {id:'mfr', name:'2F 제조부속실', total:16, eqs:['801','802','811','812','813','814','815','816','817','818','819','820','821','822','823','824']},
 ];
 
 // ===== 일정 데이터 =====
@@ -1008,25 +1035,131 @@ function hideDetail(){document.getElementById('cal-detail').style.display='none'
 function changeMonth(dir){curMonth+=dir;if(curMonth>11){curMonth=0;curYear++;}if(curMonth<0){curMonth=11;curYear--;}selectedKey=null;renderCal();}
 
 // ===== PROGRESS =====
-function renderProgress(){
-  const list=document.getElementById('zone-list');list.innerHTML='';
-  let ts=0,ds=0,totalIn=0,totalInst=0;
-  ZONES.forEach(z=>{
-    const mx=z.total*3;const done=z.반입+z.안착+z.설치;
-    ts+=mx;ds+=done;totalIn+=z.반입;totalInst+=z.설치;
-    const pct=(done/mx*100).toFixed(1);
-    const div=document.createElement('div');div.className='pjt-zone';
-    div.innerHTML=`<div class="pjt-zone-header"><span class="pjt-zone-name">${z.name} <span style="color:#86868b;font-size:11px;font-weight:400">(${z.total}대)</span></span><span class="pjt-zone-pct">${pct}%</span></div>
-    <div class="pjt-steps">
-      <div><div class="step-bar"><div class="step-fill step-fill-in" style="width:${(z.반입/z.total*100).toFixed(1)}%"></div></div><div class="step-label">반입 ${z.반입}/${z.total}</div></div>
-      <div><div class="step-bar"><div class="step-fill step-fill-an" style="width:${(z.안착/z.total*100).toFixed(1)}%"></div></div><div class="step-label">안착 ${z.안착}/${z.total}</div></div>
-      <div><div class="step-bar"><div class="step-fill step-fill-inst" style="width:${(z.설치/z.total*100).toFixed(1)}%"></div></div><div class="step-label">설치 ${z.설치}/${z.total}</div></div>
-    </div>`;
-    list.appendChild(div);
+function getCksProg(zoneId){try{return JSON.parse(localStorage.getItem('eq_ck_'+zoneId)||'{}')}catch(e){return{}}}
+function saveCksProg(zoneId,data){try{localStorage.setItem('eq_ck_'+zoneId,JSON.stringify(data))}catch(e){}}
+
+function calcZone(z,cks){
+  let zIn=0,zAn=0,zInstChecked=0,zChk=0,totalChecked=0;
+  z.eqs.forEach(eq=>{
+    CHECK_COLS.forEach(c=>{if(cks[eq+'_'+c])totalChecked++;});
+    if(cks[eq+'_반입'])zIn++;
+    if(cks[eq+'_입고검사'])zAn++;
+    INSTALL_COLS.forEach(c=>{if(cks[eq+'_'+c])zInstChecked++;});
+    if(cks[eq+'_시공검측'])zChk++;
   });
-  document.getElementById('total-pct').textContent=(ds/ts*100).toFixed(1)+'%';
+  const mx=z.total*CHECK_COLS.length;
+  const pct=(totalChecked/mx*100).toFixed(1);
+  const instPct=(zInstChecked/(z.total*INSTALL_COLS.length)*100).toFixed(0);
+  return{zIn,zAn,zInstChecked,instPct,zChk,totalChecked,mx,pct};
+}
+
+function updateProgressGlobal(){
+  let grandChecked=0,grandMax=0,totalIn=0,totalInst=0;
+  ZONES.forEach(z=>{
+    const cks=getCksProg(z.id);
+    const r=calcZone(z,cks);
+    grandChecked+=r.totalChecked;grandMax+=r.mx;totalIn+=r.zIn;
+    z.eqs.forEach(eq=>{if(INSTALL_COLS.every(c=>cks[eq+'_'+c]))totalInst++;});
+  });
+  document.getElementById('total-pct').textContent=(grandChecked/grandMax*100).toFixed(1)+'%';
   document.getElementById('total-in').textContent=totalIn+'대';
   document.getElementById('total-inst').textContent=totalInst+'대';
+}
+
+function buildCheckTable(z,cks){
+  const colHeaders=CHECK_COLS.map(c=>`<th>${c}</th>`).join('');
+  const rows=z.eqs.map(eq=>{
+    const pct=Math.round(CHECK_COLS.filter(c=>cks[eq+'_'+c]).length/CHECK_COLS.length*100);
+    const checks=CHECK_COLS.map(c=>{
+      const done=!!cks[eq+'_'+c];
+      return`<td><div class="cbox${done?' done':''}" onclick="toggleCkProg('${z.id}','${eq}','${c}',this)"></div></td>`;
+    }).join('');
+    return`<tr>
+      <td><div>${eq}</div><div class="eq-pct">${pct}%</div><div class="eq-pct-bar"><div class="eq-pct-fill" style="width:${pct}%"></div></div></td>
+      ${checks}</tr>`;
+  }).join('');
+  const sumCols=CHECK_COLS.map(c=>{
+    const cnt=z.eqs.filter(eq=>cks[eq+'_'+c]).length;
+    return`<td style="color:${cnt===z.total?'#2e7d32':'#1D5BA6'}">${cnt}/${z.total}</td>`;
+  }).join('');
+  return`<table class="checklist-table">
+    <thead><tr><th>장비번호</th>${colHeaders}</tr></thead>
+    <tbody>${rows}<tr class="sum-row"><td>합계</td>${sumCols}</tr></tbody>
+  </table>`;
+}
+
+function refreshZoneCard(id,cks){
+  const z=ZONES.find(z=>z.id===id);if(!z)return;
+  const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cks);
+  const card=document.getElementById('zone-'+id);
+  card.querySelector('.zone-pct-pill').textContent=pct+'%';
+  const bars=card.querySelectorAll('.step-fill');
+  bars[0].style.width=(zIn/z.total*100)+'%';
+  bars[1].style.width=(zAn/z.total*100)+'%';
+  bars[2].style.width=instPct+'%';
+  bars[3].style.width=(zChk/z.total*100)+'%';
+  const labels=card.querySelectorAll('.step-label');
+  labels[0].textContent='반입 '+zIn+'/'+z.total;
+  labels[1].textContent='입고검사 '+zAn+'/'+z.total;
+  labels[2].textContent='설치 '+zInstChecked+'/'+(z.total*INSTALL_COLS.length);
+  labels[3].textContent='시공검측 '+zChk+'/'+z.total;
+  const sumCells=card.querySelectorAll('.sum-row td');
+  CHECK_COLS.forEach((c,i)=>{
+    const cnt=z.eqs.filter(eq=>cks[eq+'_'+c]).length;
+    sumCells[i+1].textContent=cnt+'/'+z.total;
+    sumCells[i+1].style.color=cnt===z.total?'#2e7d32':'#1D5BA6';
+  });
+}
+
+window.toggleCkProg=function(zoneId,eq,col,el){
+  const cks=getCksProg(zoneId);
+  const key=eq+'_'+col;
+  cks[key]=!cks[key];
+  saveCksProg(zoneId,cks);
+  el.classList.toggle('done',cks[key]);
+  const pct=Math.round(CHECK_COLS.filter(c=>cks[eq+'_'+c]).length/CHECK_COLS.length*100);
+  const row=el.closest('tr');
+  row.querySelector('.eq-pct').textContent=pct+'%';
+  row.querySelector('.eq-pct-fill').style.width=pct+'%';
+  refreshZoneCard(zoneId,cks);
+  updateProgressGlobal();
+};
+
+window.toggleZone=function(id){
+  const card=document.getElementById('zone-'+id);
+  const cl=document.getElementById('cl-'+id);
+  const isOpen=card.classList.contains('open');
+  card.classList.toggle('open',!isOpen);
+  cl.style.display=isOpen?'none':'block';
+};
+
+function renderProgress(){
+  const list=document.getElementById('zone-list');list.innerHTML='';
+  ZONES.forEach(z=>{
+    const cks=getCksProg(z.id);
+    const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cks);
+    const card=document.createElement('div');
+    card.className='zone-card';card.id='zone-'+z.id;
+    card.innerHTML=`
+      <div class="zone-header" onclick="toggleZone('${z.id}')">
+        <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px">
+          <span class="zone-name">${z.name}</span><span class="zone-sub">${z.total}대</span>
+        </div></div>
+        <span class="zone-pct-pill">${pct}%</span>
+        <span class="zone-chevron">⌄</span>
+      </div>
+      <div class="zone-bars">
+        <div><div class="step-bar"><div class="step-fill fill-in" style="width:${(zIn/z.total*100).toFixed(0)}%"></div></div><div class="step-label">반입 ${zIn}/${z.total}</div></div>
+        <div><div class="step-bar"><div class="step-fill fill-an" style="width:${(zAn/z.total*100).toFixed(0)}%"></div></div><div class="step-label">입고검사 ${zAn}/${z.total}</div></div>
+        <div><div class="step-bar"><div class="step-fill fill-inst" style="width:${instPct}%"></div></div><div class="step-label">설치 ${zInstChecked}/${z.total*INSTALL_COLS.length}</div></div>
+        <div><div class="step-bar"><div class="step-fill" style="width:${(zChk/z.total*100).toFixed(0)}%;background:#7c3aed"></div></div><div class="step-label">시공검측 ${zChk}/${z.total}</div></div>
+      </div>
+      <div class="checklist-wrap" id="cl-${z.id}" style="display:none">
+        ${buildCheckTable(z,cks)}
+      </div>`;
+    list.appendChild(card);
+  });
+  updateProgressGlobal();
 }
 
 // ===== ATTENDANCE =====
