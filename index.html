@@ -155,6 +155,8 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .cbox{width:20px;height:20px;border-radius:5px;border:1.5px solid #d1d1d6;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.12s}
 .cbox.done{background:#1D5BA6;border-color:#1D5BA6}
 .cbox.done::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.cbox.past{background:#c7c7cc;border-color:#c7c7cc;cursor:default}
+.cbox.past::after{content:'';display:block;width:9px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
 .eq-pct{font-size:10px;font-weight:700;color:#1d1d1f;min-width:32px;text-align:center}
 .eq-pct-bar{height:3px;border-radius:2px;background:#e5e5e5;margin-top:2px;overflow:hidden}
 .eq-pct-fill{height:100%;border-radius:2px;background:#1D5BA6;transition:width 0.3s}
@@ -529,34 +531,54 @@ function applyChecksToUI(dateKey, checks) {
 
 // ===== 공정 체크리스트 Firebase 연동 =====
 // Firestore: progress_checks_{dateKey} 컬렉션, 문서ID: zoneId
-// 구조: { checks: { "801_반입": true, ... } }
+// 구조: { checks: { "801_반입": true, ... } }  ← 해당 날 신규 체크만 저장
+// 화면 표시: 해당 날짜까지 모든 날짜 체크 누적 병합
 
-// 과거 데이터 (3F FIZ 누적 체크 상태)
-const PAST_PROGRESS = {
+// 과거 데이터 — 날짜별 신규 체크만 (당일 새로 추가된 항목)
+const PAST_PROGRESS_DAILY = {
   '2026-06-17': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true } },
-  '2026-06-18': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true,'807_반입':true,'808_반입':true,'809_반입':true,'820_반입':true,'821_반입':true,'822_반입':true,'823_반입':true,'801_입고검사':true,'802_입고검사':true,'803_입고검사':true,'804_입고검사':true,'805_입고검사':true,'806_입고검사':true } },
-  '2026-06-19': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true,'807_반입':true,'808_반입':true,'809_반입':true,'820_반입':true,'821_반입':true,'822_반입':true,'823_반입':true,'824_반입':true,'825_반입':true,'826_반입':true,'827_반입':true,'828_반입':true,'829_반입':true,'830_반입':true,'801_입고검사':true,'802_입고검사':true,'803_입고검사':true,'804_입고검사':true,'805_입고검사':true,'806_입고검사':true,'807_입고검사':true,'808_입고검사':true,'809_입고검사':true,'820_입고검사':true,'821_입고검사':true,'822_입고검사':true,'823_입고검사':true } },
-  '2026-06-20': { fiz: { '801_반입':true,'802_반입':true,'803_반입':true,'804_반입':true,'805_반입':true,'806_반입':true,'807_반입':true,'808_반입':true,'809_반입':true,'820_반입':true,'821_반입':true,'822_반입':true,'823_반입':true,'824_반입':true,'825_반입':true,'826_반입':true,'827_반입':true,'828_반입':true,'829_반입':true,'830_반입':true,'801_입고검사':true,'802_입고검사':true,'803_입고검사':true,'804_입고검사':true,'805_입고검사':true,'806_입고검사':true,'807_입고검사':true,'808_입고검사':true,'809_입고검사':true,'820_입고검사':true,'821_입고검사':true,'822_입고검사':true,'823_입고검사':true,'824_입고검사':true,'825_입고검사':true,'826_입고검사':true,'827_입고검사':true,'828_입고검사':true,'829_입고검사':true,'830_입고검사':true } },
+  '2026-06-18': { fiz: { '807_반입':true,'808_반입':true,'809_반입':true,'820_반입':true,'821_반입':true,'822_반입':true,'823_반입':true,'801_입고검사':true,'802_입고검사':true,'803_입고검사':true,'804_입고검사':true,'805_입고검사':true,'806_입고검사':true } },
+  '2026-06-19': { fiz: { '824_반입':true,'825_반입':true,'826_반입':true,'827_반입':true,'828_반입':true,'829_반입':true,'830_반입':true,'807_입고검사':true,'808_입고검사':true,'809_입고검사':true,'820_입고검사':true,'821_입고검사':true,'822_입고검사':true,'823_입고검사':true } },
+  '2026-06-20': { fiz: { '824_입고검사':true,'825_입고검사':true,'826_입고검사':true,'827_입고검사':true,'828_입고검사':true,'829_입고검사':true,'830_입고검사':true } },
 };
+
+// 날짜 목록 (정렬된 과거 날짜들)
+const PAST_DATES = Object.keys(PAST_PROGRESS_DAILY).sort();
+
+// 특정 날짜까지 누적 병합 (zoneId별)
+function getCumulativeChecks(dateKey, zoneId) {
+  const merged = {};
+  for (const d of PAST_DATES) {
+    if (d > dateKey) break; // 해당 날짜 이후는 제외
+    const dayData = PAST_PROGRESS_DAILY[d][zoneId] || {};
+    Object.assign(merged, dayData);
+  }
+  return merged;
+}
+
+// 특정 날짜에 새로 추가된 체크 (이전 날짜와 비교)
+function getDailyNewChecks(dateKey, zoneId) {
+  const prevDate = PAST_DATES.filter(d => d < dateKey).slice(-1)[0];
+  const today = PAST_PROGRESS_DAILY[dateKey]?.[zoneId] || {};
+  if (!prevDate) return today; // 첫 날은 전부 신규
+  return today; // 이미 daily 데이터 자체가 신규분만 저장
+}
 
 let _progUnsubMap = {};
 
 // 날짜별 공정 체크 구독
 window._fbSubscribeProgress = async function(dateKey) {
-  // 이전 구독 전체 해제
   Object.values(_progUnsubMap).forEach(fn => fn && fn());
   _progUnsubMap = {};
 
-  // 과거 고정 데이터 있으면 Firebase 구독 불필요
-  if (PAST_PROGRESS[dateKey]) {
-    window._progCache = window._progCache || {};
-    window._progCache[dateKey] = PAST_PROGRESS[dateKey];
+  // 과거 고정 데이터는 Firebase 구독 불필요
+  if (dateKey <= PAST_DATES[PAST_DATES.length - 1]) {
     if (window._renderProgressUI) window._renderProgressUI();
     return;
   }
 
   // 오늘/미래는 Firebase 실시간 구독
-  const { collection, onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const ZONE_IDS = ['fiz','xob','c3','c4','wob','mfr'];
   window._progCache = window._progCache || {};
   window._progCache[dateKey] = window._progCache[dateKey] || {};
@@ -571,7 +593,7 @@ window._fbSubscribeProgress = async function(dateKey) {
   });
 };
 
-// 공정 체크 저장 (오늘만)
+// 공정 체크 저장 (오늘만, 당일 신규 체크만 Firebase에 저장)
 window._fbSetProgCheck = async function(dateKey, zoneId, key, isDone) {
   try {
     const { doc, getDoc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
@@ -586,7 +608,6 @@ window._fbSetProgCheck = async function(dateKey, zoneId, key, isDone) {
     window._progCache[dateKey][zoneId] = checks;
   } catch(e) {
     console.error('공정 체크 저장 오류:', e);
-    // localStorage fallback
     const lk = 'eq_ck_'+dateKey+'_'+zoneId;
     const d = JSON.parse(localStorage.getItem(lk)||'{}');
     if (isDone) d[key]=true; else delete d[key];
@@ -594,15 +615,23 @@ window._fbSetProgCheck = async function(dateKey, zoneId, key, isDone) {
   }
 };
 
-// 공정 체크 읽기
+// 공정 체크 읽기 — 누적 병합 반환
+// returns { merged: {전체누적}, todayOnly: {오늘신규} }
 window._fbGetProgChecks = function(dateKey, zoneId) {
-  // 과거 고정 데이터
-  if (PAST_PROGRESS[dateKey]) return PAST_PROGRESS[dateKey][zoneId] || {};
-  // 캐시
-  if (window._progCache && window._progCache[dateKey] && window._progCache[dateKey][zoneId] !== undefined)
-    return window._progCache[dateKey][zoneId];
-  // localStorage fallback
-  try { return JSON.parse(localStorage.getItem('eq_ck_'+dateKey+'_'+zoneId)||'{}'); } catch(e) { return {}; }
+  // 과거 날짜까지 누적
+  const pastMerged = getCumulativeChecks(dateKey, zoneId);
+
+  // 오늘 Firebase/localStorage 신규 체크
+  let todayOnly = {};
+  if (window._progCache && window._progCache[dateKey] && window._progCache[dateKey][zoneId] !== undefined) {
+    todayOnly = window._progCache[dateKey][zoneId];
+  } else {
+    try { todayOnly = JSON.parse(localStorage.getItem('eq_ck_'+dateKey+'_'+zoneId)||'{}'); } catch(e) {}
+  }
+
+  // 최종 병합 (과거 + 오늘)
+  const merged = Object.assign({}, pastMerged, todayOnly);
+  return { merged, todayOnly, pastOnly: pastMerged };
 };
 
 </script>
@@ -1147,11 +1176,18 @@ function initProgress(){
 
 function getCksProg(zoneId){
   const dateKey=toKey(getProgDate());
-  if(window._fbGetProgChecks)return window._fbGetProgChecks(dateKey,zoneId);
-  try{return JSON.parse(localStorage.getItem('eq_ck_'+dateKey+'_'+zoneId)||'{}')}catch(e){return{};}
+  if(window._fbGetProgChecks){
+    const r=window._fbGetProgChecks(dateKey,zoneId);
+    return r; // {merged, todayOnly, pastOnly}
+  }
+  try{
+    const merged=JSON.parse(localStorage.getItem('eq_ck_'+dateKey+'_'+zoneId)||'{}');
+    return{merged,todayOnly:merged,pastOnly:{}};
+  }catch(e){return{merged:{},todayOnly:{},pastOnly:{}};}
 }
 
-function calcZone(z,cks){
+function calcZone(z,cksObj){
+  const cks=cksObj.merged||cksObj; // 누적 전체 기준으로 계산
   let zIn=0,zAn=0,zInstChecked=0,zChk=0,totalChecked=0;
   z.eqs.forEach(eq=>{
     CHECK_COLS.forEach(c=>{if(cks[eq+'_'+c])totalChecked++;});
@@ -1169,9 +1205,10 @@ function calcZone(z,cks){
 function updateProgressGlobal(){
   let grandChecked=0,grandMax=0,totalIn=0,totalInst=0;
   ZONES.forEach(z=>{
-    const cks=getCksProg(z.id);
-    const r=calcZone(z,cks);
+    const cksObj=getCksProg(z.id);
+    const r=calcZone(z,cksObj);
     grandChecked+=r.totalChecked;grandMax+=r.mx;totalIn+=r.zIn;
+    const cks=cksObj.merged||cksObj;
     z.eqs.forEach(eq=>{if(INSTALL_COLS.every(c=>cks[eq+'_'+c]))totalInst++;});
   });
   document.getElementById('total-pct').textContent=(grandChecked/grandMax*100).toFixed(1)+'%';
@@ -1179,28 +1216,40 @@ function updateProgressGlobal(){
   document.getElementById('total-inst').textContent=totalInst+'대';
 }
 
-function buildCheckTable(z,cks){
+function buildCheckTable(z,cksObj){
   const isToday=isProgToday();
+  const merged=cksObj.merged||cksObj;
+  const todayOnly=cksObj.todayOnly||{};
   const colHeaders=CHECK_COLS.map(c=>`<th>${c}</th>`).join('');
   const rows=z.eqs.map(eq=>{
-    const pct=Math.round(CHECK_COLS.filter(c=>cks[eq+'_'+c]).length/CHECK_COLS.length*100);
+    const pct=Math.round(CHECK_COLS.filter(c=>merged[eq+'_'+c]).length/CHECK_COLS.length*100);
     const checks=CHECK_COLS.map(c=>{
-      const done=!!cks[eq+'_'+c];
-      const ro=!isToday;
-      return`<td><div class="cbox${done?' done':''}${ro?' readonly':''}"${isToday?` onclick="toggleCkProg('${z.id}','${eq}','${c}',this)"`:''}></div></td>`;
+      const key=eq+'_'+c;
+      const done=!!merged[key];
+      const isNew=!!todayOnly[key]; // 오늘 새로 체크한 항목
+      const isPast=done&&!isNew;    // 이전 날짜에서 넘어온 항목
+      // 오늘: 파란색(done) or 빈칸(클릭가능)
+      // 이전: 회색(done, 읽기전용)
+      // 과거 날짜 조회: 전부 읽기전용
+      const ro=isPast||!isToday;
+      let cls='cbox';
+      if(done&&isNew)cls+=' done';       // 오늘 체크 → 파란색
+      else if(done&&isPast)cls+=' past'; // 과거 체크 → 회색
+      const click=isToday&&!isPast?` onclick="toggleCkProg('${z.id}','${eq}','${c}',this)"`:'';
+      return`<td><div class="${cls}"${click}></div></td>`;
     }).join('');
     return`<tr><td><div>${eq}</div><div class="eq-pct">${pct}%</div><div class="eq-pct-bar"><div class="eq-pct-fill" style="width:${pct}%"></div></div></td>${checks}</tr>`;
   }).join('');
   const sumCols=CHECK_COLS.map(c=>{
-    const cnt=z.eqs.filter(eq=>cks[eq+'_'+c]).length;
+    const cnt=z.eqs.filter(eq=>merged[eq+'_'+c]).length;
     return`<td style="color:${cnt===z.total?'#2e7d32':'#1D5BA6'}">${cnt}/${z.total}</td>`;
   }).join('');
   return`<table class="checklist-table"><thead><tr><th>장비번호</th>${colHeaders}</tr></thead><tbody>${rows}<tr class="sum-row"><td>합계</td>${sumCols}</tr></tbody></table>`;
 }
 
-function refreshZoneCard(id,cks){
+function refreshZoneCard(id,cksObj){
   const z=ZONES.find(z=>z.id===id);if(!z)return;
-  const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cks);
+  const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cksObj);
   const card=document.getElementById('zone-'+id);if(!card)return;
   card.querySelector('.zone-pct-pill').textContent=pct+'%';
   const bars=card.querySelectorAll('.step-fill');
@@ -1210,6 +1259,7 @@ function refreshZoneCard(id,cks){
   labels[0].textContent='반입 '+zIn+'/'+z.total;labels[1].textContent='입고검사 '+zAn+'/'+z.total;
   labels[2].textContent='설치 '+zInstChecked+'/'+(z.total*INSTALL_COLS.length);labels[3].textContent='시공검측 '+zChk+'/'+z.total;
   const sumCells=card.querySelectorAll('.sum-row td');
+  const cks=cksObj.merged||cksObj;
   CHECK_COLS.forEach((c,i)=>{
     const cnt=z.eqs.filter(eq=>cks[eq+'_'+c]).length;
     sumCells[i+1].textContent=cnt+'/'+z.total;
@@ -1220,18 +1270,23 @@ function refreshZoneCard(id,cks){
 window.toggleCkProg=function(zoneId,eq,col,el){
   if(!isProgToday())return;
   const dateKey=toKey(getProgDate());
-  const cks=getCksProg(zoneId);
+  const cksObj=getCksProg(zoneId);
+  const merged=Object.assign({},cksObj.merged||{});
+  const todayOnly=Object.assign({},cksObj.todayOnly||{});
   const key=eq+'_'+col;
-  const isDone=!cks[key];
-  if(isDone)cks[key]=true; else delete cks[key];
-  el.classList.toggle('done',isDone);
+  const isDone=!todayOnly[key];
+  if(isDone){merged[key]=true;todayOnly[key]=true;}
+  else{delete merged[key];delete todayOnly[key];}
+  // UI 즉시 반영
+  el.className='cbox'+(isDone?' done':'');
   if(window._fbSetProgCheck)window._fbSetProgCheck(dateKey,zoneId,key,isDone);
-  else{try{localStorage.setItem('eq_ck_'+dateKey+'_'+zoneId,JSON.stringify(cks));}catch(e){}}
-  const pct=Math.round(CHECK_COLS.filter(c=>cks[eq+'_'+c]).length/CHECK_COLS.length*100);
+  else{try{localStorage.setItem('eq_ck_'+dateKey+'_'+zoneId,JSON.stringify(todayOnly));}catch(e){}}
+  const newCksObj={merged,todayOnly,pastOnly:cksObj.pastOnly||{}};
+  const pct=Math.round(CHECK_COLS.filter(c=>merged[eq+'_'+c]).length/CHECK_COLS.length*100);
   const row=el.closest('tr');
   row.querySelector('.eq-pct').textContent=pct+'%';
   row.querySelector('.eq-pct-fill').style.width=pct+'%';
-  refreshZoneCard(zoneId,cks);
+  refreshZoneCard(zoneId,newCksObj);
   updateProgressGlobal();
 };
 
@@ -1250,8 +1305,8 @@ function renderProgress(){
   const openIds=ZONES.filter(z=>{const c=document.getElementById('zone-'+z.id);return c&&c.classList.contains('open');}).map(z=>z.id);
   list.innerHTML='';
   ZONES.forEach(z=>{
-    const cks=getCksProg(z.id);
-    const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cks);
+    const cksObj=getCksProg(z.id);
+    const{zIn,zAn,zInstChecked,instPct,zChk,pct}=calcZone(z,cksObj);
     const wasOpen=openIds.includes(z.id);
     const card=document.createElement('div');
     card.className='zone-card'+(wasOpen?' open':'');card.id='zone-'+z.id;
@@ -1270,7 +1325,7 @@ function renderProgress(){
         <div><div class="step-bar"><div class="step-fill" style="width:${(zChk/z.total*100).toFixed(0)}%;background:#7c3aed"></div></div><div class="step-label">시공검측 ${zChk}/${z.total}</div></div>
       </div>
       <div class="checklist-wrap" id="cl-${z.id}" style="display:${wasOpen?'block':'none'}">
-        ${buildCheckTable(z,cks)}
+        ${buildCheckTable(z,cksObj)}
       </div>`;
     list.appendChild(card);
   });
