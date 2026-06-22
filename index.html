@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>P4 Ph2 (FAB) · 현장 관리</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh}
+.app{width:100%;max-width:480px;margin:0 auto;background:#fff;min-height:100vh;padding-bottom:80px}
+.header{padding:16px 16px 0;border-bottom:1px solid #e5e5e5;background:#fff;position:sticky;top:0;z-index:10}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.logo-main{font-size:15px;font-weight:600;color:#1d1d1f;letter-spacing:-0.3px}
+.logo-sub{font-size:11px;color:#86868b;margin-top:1px}
+.date-badge{font-size:12px;color:#86868b;background:#f5f5f7;padding:4px 10px;border-radius:8px;border:1px solid #e5e5e5;white-space:nowrap}
+.tab-bar{display:flex}
+.tab{flex:1;padding:10px 4px;font-size:12px;font-weight:400;color:#86868b;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s}
+.tab.active{color:#1d1d1f;font-weight:600;border-bottom-color:#1D5BA6}
+.content{padding:16px}
+
+/* TODAY */
+.today-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.today-title{font-size:16px;font-weight:600;color:#1d1d1f}
+.progress-pill{font-size:12px;color:#1D5BA6;background:#e8f0fb;padding:3px 10px;border-radius:20px}
+.prog-bar-wrap{height:4px;background:#e5e5e5;border-radius:2px;margin-top:8px}
+.prog-bar{height:100%;border-radius:2px;background:#1D5BA6;transition:width 0.3s}
+.task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;-webkit-user-select:none;user-select:none}
+.task-item:last-child{border-bottom:none}
+.check{width:22px;height:22px;border-radius:6px;border:1.5px solid #d1d1d6;background:#fff;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.check.done{background:#1D5BA6;border-color:#1D5BA6}
+.check.done::after{content:'';display:block;width:11px;height:7px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.task-body{flex:1;min-width:0}
+.task-meta{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+.task-time{font-size:11px;font-weight:600;color:#1D5BA6;font-variant-numeric:tabular-nums}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600}
+.tag-fcu{background:#e8f0fb;color:#0a3d7a}
+.tag-meeting{background:#fff3e0;color:#5d3a00}
+.tag-edu{background:#f3f0ff;color:#3c2a8a}
+.tag-admin{background:#f5f5f5;color:#3a3a3a}
+.tag-inspect{background:#e8f5e9;color:#1b5e20}
+.tag-off{background:#ffeaea;color:#7f1d1d}
+.task-text{font-size:14px;color:#1d1d1f;line-height:1.45}
+.task-text.done-text{color:#c7c7cc;text-decoration:line-through}
+
+/* TWO WEEK */
+.week-day{margin-bottom:20px}
+.week-day-label{font-size:11px;font-weight:600;color:#86868b;letter-spacing:0.5px;margin-bottom:8px;text-transform:uppercase}
+.week-item{display:flex;align-items:flex-start;gap:10px;padding:9px 13px;background:#f5f5f7;border-radius:10px;margin-bottom:6px}
+.week-time{font-size:11px;color:#1D5BA6;font-weight:600;min-width:48px;padding-top:1px;font-variant-numeric:tabular-nums}
+.week-text{font-size:13px;color:#1d1d1f;line-height:1.4;flex:1}
+.week-tag{font-size:10px;padding:2px 6px;border-radius:4px;margin-left:8px;flex-shrink:0;font-weight:600}
+.week-divider{height:1px;background:#e5e5e5;margin:4px 0 8px}
+
+/* CALENDAR */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav{background:none;border:1px solid #d1d1d6;border-radius:8px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#86868b;font-size:16px}
+.cal-month{font-size:15px;font-weight:600;color:#1d1d1f}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal-dow{font-size:10px;color:#86868b;padding:4px 0;font-weight:600}
+.cal-day{padding:4px 2px;border-radius:10px;cursor:pointer;min-height:48px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:background 0.12s}
+.cal-day:active{background:#e5e5e5}
+.cal-day.selected{background:#e8f0fb}
+.cal-day-num{font-size:13px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cal-day.today .cal-day-num{background:#1D5BA6;color:#fff;font-size:12px}
+.cal-day.selected .cal-day-num{background:#1D5BA6;color:#fff;font-size:12px}
+.cal-day.holiday .cal-day-num{color:#c0392b}
+.dot{width:5px;height:5px;border-radius:50%}
+.dot-blue{background:#1D5BA6}
+.dot-green{background:#2e7d32}
+.dot-purple{background:#5e35b1}
+.dot-red{background:#c0392b}
+.dots-row{display:flex;gap:2px;flex-wrap:wrap;justify-content:center}
+.cal-detail{margin-top:16px;border-top:1px solid #e5e5e5;padding-top:14px}
+.cal-detail-title{font-size:14px;font-weight:600;color:#1d1d1f;margin-bottom:12px}
+.cal-detail-empty{font-size:13px;color:#86868b;text-align:center;padding:24px 0}
+.cal-task{display:flex;align-items:flex-start;gap:10px;padding:9px 13px;background:#f5f5f7;border-radius:10px;margin-bottom:6px}
+.cal-task-time{font-size:11px;color:#1D5BA6;font-weight:600;min-width:48px;padding-top:1px;font-variant-numeric:tabular-nums}
+.cal-task-body{flex:1;min-width:0}
+.cal-task-text{font-size:13px;color:#1d1d1f;line-height:1.4}
+.cal-task-tag{margin-top:3px}
+
+/* LEGEND */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#86868b}
+.legend-dot{width:8px;height:8px;border-radius:2px}
+
+/* PROGRESS */
+.ref-date{font-size:11px;color:#86868b;margin-bottom:12px;text-align:right}
+.total-card{background:#f5f5f7;border-radius:14px;padding:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+.stat-item{display:flex;flex-direction:column;gap:2px}
+.stat-label{font-size:11px;color:#86868b}
+.stat-val{font-size:22px;font-weight:600;color:#1d1d1f}
+.pjt-zone{margin-bottom:16px}
+.pjt-zone-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.pjt-zone-name{font-size:13px;color:#3a3a3a;font-weight:500}
+.pjt-zone-pct{font-size:13px;font-weight:600;color:#1d1d1f}
+.pjt-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.step-bar{height:7px;border-radius:4px;background:#e5e5e5;overflow:hidden}
+.step-fill{height:100%;border-radius:4px;transition:width 0.5s ease}
+.step-fill-in{background:#1D5BA6}
+.step-fill-an{background:#5BA4CF}
+.step-fill-inst{background:#b5d4f4}
+.step-label{font-size:10px;color:#86868b;margin-top:4px;text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="logo-main">P4 Ph2 (FAB)</div>
+        <div class="logo-sub">귀뚜라미범양냉방 · FCU 설치</div>
+      </div>
+      <span class="date-badge" id="today-badge"></span>
+    </div>
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('today',this)">오늘</button>
+      <button class="tab" onclick="switchTab('twoweek',this)">2주</button>
+      <button class="tab" onclick="switchTab('calendar',this)">캘린더</button>
+      <button class="tab" onclick="switchTab('progress',this)">공정</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- TODAY -->
+    <div id="tab-today">
+      <div class="today-header">
+        <span class="today-title" id="today-title">오늘 일정</span>
+        <span class="progress-pill" id="prog-text">0 / 0</span>
+      </div>
+      <div class="prog-bar-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+      <div style="height:14px"></div>
+      <div id="task-list"></div>
+    </div>
+
+    <!-- TWO WEEK -->
+    <div id="tab-twoweek" style="display:none"></div>
+
+    <!-- CALENDAR -->
+    <div id="tab-calendar" style="display:none">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+        <span class="cal-month" id="cal-month-label"></span>
+        <button class="cal-nav" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#1D5BA6"></span>반입</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2e7d32"></span>검수</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#5e35b1"></span>교육</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>휴무</span>
+      </div>
+      <div class="cal-grid" id="cal-grid">
+        <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+        <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
+      </div>
+      <div class="cal-detail" id="cal-detail" style="display:none">
+        <div class="cal-detail-title" id="cal-detail-title"></div>
+        <div id="cal-detail-body"></div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div id="tab-progress" style="display:none">
+      <div class="ref-date">기준일: 2026-06-19</div>
+      <div class="total-card">
+        <div class="stat-item"><span class="stat-label">총 설치 대상</span><span class="stat-val">183대</span></div>
+        <div class="stat-item"><span class="stat-label">누적 반입</span><span class="stat-val" id="total-in">—</span></div>
+        <div class="stat-item"><span class="stat-label">전체 공정율</span><span class="stat-val" id="total-pct">—</span></div>
+        <div class="stat-item"><span class="stat-label">완료 구역</span><span class="stat-val" id="done-zones">0</span></div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#1D5BA6"></span>반입</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#5BA4CF"></span>안착</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#b5d4f4"></span>설치</span>
+      </div>
+      <div id="zone-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const ZONES=[
+  {name:'3F FIZ',total:39,반입:20,안착:20,설치:0},
+  {name:'X-OB',total:19,반입:0,안착:0,설치:0},
+  {name:'복합3동',total:14,반입:0,안착:0,설치:0},
+  {name:'복합4동',total:14,반입:0,안착:0,설치:0},
+  {name:'W-OB',total:81,반입:0,안착:0,설치:0},
+  {name:'2F 제조부속실',total:16,반입:0,안착:0,설치:0},
+];
+
+const ALL_SCHEDULE={
+  '2026-06-22':[
+    {time:'13:00',text:'안전팀장 회의 (가동1층대회의실)',tag:'meeting',tagLabel:'회의'},
+    {time:'14:00',text:'지게차 안전점검표 서명 (중기팀)',tag:'admin',tagLabel:'행정'},
+    {time:'17:00',text:'관리자 정기교육 (소교육장2)',tag:'edu',tagLabel:'교육'},
+    {time:'19:00',text:'FCU 설치 야간작업',tag:'fcu',tagLabel:'FCU설치'},
+    {time:null,text:'FCU 공장검수 (범양)',tag:'inspect',tagLabel:'검수'},
+    {time:null,text:'W26·W27 지게차 배차 요청',tag:'admin',tagLabel:'행정'},
+  ],
+  '2026-06-23':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'14:00',text:'(Ph4) 기술인 정기교육',tag:'edu',tagLabel:'교육'},
+    {time:'16:00',text:'(Ph4) 관리자 정기교육',tag:'edu',tagLabel:'교육'},
+    {time:'17:00',text:'기술인 정기교육 (최수빈프로)',tag:'edu',tagLabel:'교육'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+    {time:null,text:'FCU 공장검수 (물산)',tag:'inspect',tagLabel:'검수'},
+  ],
+  '2026-06-24':[
+    {time:'13:00',text:'안전팀장 회의 (중회의실5)',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+    {time:'20:00',text:'비상대피훈련',tag:'edu',tagLabel:'교육'},
+    {time:null,text:'FCU 공장검수 (감리)',tag:'inspect',tagLabel:'검수'},
+  ],
+  '2026-06-25':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'15:00',text:'관리자 특별교육 (김종화·정다애)',tag:'edu',tagLabel:'교육'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-06-26':[
+    {time:'10:00',text:'품질안전공정회의 (가동 대회의실)',tag:'meeting',tagLabel:'회의'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 2차 반입 5대(810~814) + 부자재 19대',tag:'fcu',tagLabel:'반입'},
+    {time:'23:00',text:'E/V #13 사용',tag:'admin',tagLabel:'행정'},
+  ],
+  '2026-06-27':[
+    {time:'08:00',text:'당직 (단일슬롯 08~15시)',tag:'admin',tagLabel:'당직'},
+    {time:'10:00',text:'FCU 입고검사 5대(810~814)',tag:'inspect',tagLabel:'검수'},
+  ],
+  '2026-06-28':[{time:null,text:'휴무',tag:'off',tagLabel:'휴무'}],
+  '2026-06-29':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 2차 반입 5대(815~819)',tag:'fcu',tagLabel:'반입'},
+    {time:'23:00',text:'E/V #13 사용',tag:'admin',tagLabel:'행정'},
+  ],
+  '2026-06-30':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 2차 반입 5대(831~833,838~839)',tag:'fcu',tagLabel:'반입'},
+    {time:null,text:'FCU 입고검사 5대(815~819)',tag:'inspect',tagLabel:'검수'},
+  ],
+  '2026-07-01':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+    {time:null,text:'2차 반입분 입고검사 19EA + 5대(831~833,838~839)',tag:'inspect',tagLabel:'검수'},
+  ],
+  '2026-07-02':[
+    {time:'종일',text:'Ph4 투입 명단 확정',tag:'admin',tagLabel:'행정'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-03':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-04':[{time:null,text:'휴무',tag:'off',tagLabel:'휴무'}],
+  '2026-07-06':[
+    {time:'13:00',text:'(Ph2) 안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(Ph2) FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-07':[
+    {time:'07:00',text:'(Ph4) 공구이동 (Ph2→Ph4)',tag:'admin',tagLabel:'행정'},
+    {time:'09:00',text:'(Ph4) 특별교육',tag:'edu',tagLabel:'교육'},
+    {time:'13:00',text:'(Ph2) 안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(Ph2) FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-08':[
+    {time:'07:00',text:'(Ph4) EHU 8대 반입 및 설치(#13·#14)',tag:'fcu',tagLabel:'반입'},
+    {time:'13:00',text:'(Ph2) 안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(Ph2) FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-09':[
+    {time:'07:00',text:'EHU 설치 (#17 2대)',tag:'fcu',tagLabel:'반입'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-10':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+    {time:null,text:'공구이동 (Ph4→Ph2)',tag:'admin',tagLabel:'행정'},
+  ],
+  '2026-07-13':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-14':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-15':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+    {time:'23:00',text:'(X-OB) FCU 6EA 반입(861~866)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-16':[
+    {time:'10:00',text:'FCU 입고검사 6EA(861~866)',tag:'inspect',tagLabel:'검수'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+    {time:'23:00',text:'(X-OB) FCU 6EA 반입(867~872)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-17':[
+    {time:'10:00',text:'FCU 입고검사 6EA(867~872)',tag:'inspect',tagLabel:'검수'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+    {time:'23:00',text:'(X-OB) FCU 7EA 반입(873~879)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-18':[
+    {time:'10:00',text:'FCU 입고검사 7EA(873~879)',tag:'inspect',tagLabel:'검수'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-20':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-21':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-22':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(복합3동) FCU 4EA 반입(351~354)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-23':[
+    {time:'10:00',text:'FCU 4EA 입고검사(351~354)',tag:'inspect',tagLabel:'검수'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(복합3동) FCU 5EA 반입(355~359)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-24':[
+    {time:'10:00',text:'FCU 5EA 입고검사(355~359)',tag:'inspect',tagLabel:'검수'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(복합3동) FCU 5EA 반입(360~364)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-25':[{time:'10:00',text:'FCU 5EA 입고검사(360~364)',tag:'inspect',tagLabel:'검수'}],
+  '2026-07-27':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-28':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'FCU 설치',tag:'fcu',tagLabel:'FCU설치'},
+  ],
+  '2026-07-29':[
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(복합4동) FCU 4EA 반입(302A~302D)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-30':[
+    {time:'10:00',text:'FCU 4EA 입고검사(302A~302D)',tag:'inspect',tagLabel:'검수'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(복합4동) FCU 5EA 반입(302E~302I)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-07-31':[
+    {time:'10:00',text:'FCU 5EA 입고검사(302E~302I)',tag:'inspect',tagLabel:'검수'},
+    {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
+    {time:'19:00',text:'(복합4동) FCU 5EA 반입(302J~302N)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-08-01':[{time:'10:00',text:'FCU 5EA 입고검사(302J~302N)',tag:'inspect',tagLabel:'검수'}],
+  '2026-08-07':[{time:null,text:'8/10 장비감시자 신청',tag:'admin',tagLabel:'행정'}],
+  '2026-08-10':[
+    {time:'19:00',text:'(2F 제조부속실) FCU 8EA 반입(801~802,811~816)',tag:'fcu',tagLabel:'반입'},
+  ],
+  '2026-08-11':[{time:'19:00',text:'(2F 제조부속실) FCU 8EA 반입(817~824)',tag:'fcu',tagLabel:'반입'}],
+  '2026-08-12':[{time:'10:00',text:'(2F 제조부속실) FCU 16EA 입고검사(801~802,811~824)',tag:'inspect',tagLabel:'검수'}],
+};
+
+function pad(n){return String(n).padStart(2,'0');}
+function toKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+
+// TODAY
+function initToday(){
+  const now=new Date();
+  const days=['일','월','화','수','목','금','토'];
+  document.getElementById('today-badge').textContent=
+    now.getFullYear()+'. '+(now.getMonth()+1)+'. '+now.getDate()+' ('+days[now.getDay()]+')';
+  const key=toKey(now);
+  const items=ALL_SCHEDULE[key]||[];
+  const timed=items.filter(i=>i.time);
+  const notimed=items.filter(i=>!i.time);
+
+  const weekNum=getWeekNum(now);
+  document.getElementById('today-title').textContent='W'+weekNum+' · '+(now.getMonth()+1)+'월 '+now.getDate()+'일('+days[now.getDay()]+')';
+
+  const list=document.getElementById('task-list');
+  if(!items.length){
+    list.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">오늘 등록된 일정이 없어요</div>';
+    document.getElementById('prog-text').textContent='0 / 0';
+    return;
+  }
+  const mkItem=i=>{
+    const div=document.createElement('div');
+    div.className='task-item';
+    div.onclick=()=>toggleTask(div);
+    div.innerHTML=`<div class="check"></div><div class="task-body">
+      <div class="task-meta">${i.time?`<span class="task-time">${i.time}</span>`:''}<span class="tag tag-${i.tag}">${i.tagLabel}</span></div>
+      <div class="task-text">${i.text}</div></div>`;
+    return div;
+  };
+  timed.forEach(i=>list.appendChild(mkItem(i)));
+  if(notimed.length){
+    const div=document.createElement('div');
+    div.style.cssText='height:1px;background:#f0f0f0;margin:4px 0 8px';
+    list.appendChild(div);
+    notimed.forEach(i=>list.appendChild(mkItem(i)));
+  }
+  updateProgress();
+}
+
+function getWeekNum(d){
+  const jan1=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+}
+
+function toggleTask(el){
+  el.querySelector('.check').classList.toggle('done');
+  el.querySelector('.task-text').classList.toggle('done-text');
+  updateProgress();
+}
+function updateProgress(){
+  const total=document.querySelectorAll('#task-list .task-item').length;
+  const done=document.querySelectorAll('#task-list .check.done').length;
+  document.getElementById('prog-bar').style.width=(total?Math.round(done/total*100):0)+'%';
+  document.getElementById('prog-text').textContent=done+' / '+total;
+}
+
+// TWO WEEK
+function renderTwoWeek(){
+  const el=document.getElementById('tab-twoweek');
+  const now=new Date();now.setHours(0,0,0,0);
+  const dates=[];
+  for(let i=0;i<14;i++){
+    const d=new Date(now);d.setDate(now.getDate()+i);dates.push(d);
+  }
+  const days=['일','월','화','수','목','금','토'];
+  el.innerHTML=dates.map(d=>{
+    const key=toKey(d);
+    const items=ALL_SCHEDULE[key]||[];
+    if(!items.length)return'';
+    const timed=items.filter(i=>i.time);
+    const notimed=items.filter(i=>!i.time);
+    const wn=getWeekNum(d);
+    const label=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+') · W'+wn;
+    const mkRow=i=>`<div class="week-item"><span class="week-time">${i.time||'—'}</span><span class="week-text">${i.text}</span><span class="week-tag tag-${i.tag}">${i.tagLabel}</span></div>`;
+    const timedHTML=timed.map(mkRow).join('');
+    const notimedHTML=notimed.length?`<div class="week-divider"></div>${notimed.map(mkRow).join('')}`:'';
+    return`<div class="week-day"><div class="week-day-label">${label}</div>${timedHTML}${notimedHTML}</div>`;
+  }).join('');
+  if(!el.innerHTML.trim())el.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">2주 내 등록된 일정이 없어요</div>';
+}
+
+// CALENDAR
+let curMonth,curYear,selectedKey=null;
+function initCal(){
+  const now=new Date();curMonth=now.getMonth();curYear=now.getFullYear();renderCal();
+}
+function getDots(key){
+  const items=ALL_SCHEDULE[key]||[];const types=new Set();
+  items.forEach(i=>{
+    if(i.tag==='fcu')types.add('in');
+    else if(i.tag==='inspect')types.add('check');
+    else if(i.tag==='edu')types.add('edu');
+    else if(i.tag==='off')types.add('off');
+  });
+  return[...types];
+}
+const DOT_MAP={in:'dot-blue',check:'dot-green',edu:'dot-purple',off:'dot-red'};
+function renderCal(){
+  const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('cal-month-label').textContent=curYear+'년 '+months[curMonth];
+  const grid=document.getElementById('cal-grid');
+  const dows=[...grid.querySelectorAll('.cal-dow')];
+  grid.innerHTML='';dows.forEach(d=>grid.appendChild(d));
+  const first=new Date(curYear,curMonth,1).getDay();
+  const daysInMonth=new Date(curYear,curMonth+1,0).getDate();
+  const today=new Date();
+  for(let i=0;i<first;i++){const b=document.createElement('div');b.className='cal-day';grid.appendChild(b);}
+  for(let d=1;d<=daysInMonth;d++){
+    const key=curYear+'-'+pad(curMonth+1)+'-'+pad(d);
+    const cell=document.createElement('div');cell.className='cal-day';
+    const isToday=today.getFullYear()===curYear&&today.getMonth()===curMonth&&today.getDate()===d;
+    if(key===selectedKey)cell.classList.add('selected');
+    else if(isToday)cell.classList.add('today');
+    const dots=getDots(key);
+    if(dots.includes('off'))cell.classList.add('holiday');
+    const num=document.createElement('div');num.className='cal-day-num';num.textContent=d;cell.appendChild(num);
+    if(dots.length){
+      const row=document.createElement('div');row.className='dots-row';
+      dots.forEach(e=>{const dot=document.createElement('div');dot.className='dot '+(DOT_MAP[e]||'dot-blue');row.appendChild(dot);});
+      cell.appendChild(row);
+    }
+    cell.onclick=()=>{selectedKey=selectedKey===key?null:key;renderCal();selectedKey?renderDetail(selectedKey):hideDetail();};
+    grid.appendChild(cell);
+  }
+  if(selectedKey){
+    const[sy,sm]=selectedKey.split('-').map(Number);
+    if(sm-1!==curMonth||sy!==curYear)hideDetail();
+    else renderDetail(selectedKey);
+  }
+}
+function renderDetail(key){
+  const[y,m,d]=key.split('-').map(Number);
+  const dows=['일','월','화','수','목','금','토'];
+  const dow=dows[new Date(y,m-1,d).getDay()];
+  document.getElementById('cal-detail-title').textContent=m+'월 '+d+'일('+dow+')';
+  const items=ALL_SCHEDULE[key]||[];
+  const body=document.getElementById('cal-detail-body');
+  if(!items.length){body.innerHTML='<div class="cal-detail-empty">등록된 일정이 없어요</div>';}
+  else{
+    const timed=items.filter(i=>i.time);
+    const notimed=items.filter(i=>!i.time);
+    const mk=i=>`<div class="cal-task"><span class="cal-task-time">${i.time||'—'}</span><div class="cal-task-body"><div class="cal-task-text">${i.text}</div><div class="cal-task-tag"><span class="tag tag-${i.tag}">${i.tagLabel}</span></div></div></div>`;
+    let html=timed.map(mk).join('');
+    if(notimed.length)html+=`<div style="height:1px;background:#e5e5e5;margin:6px 0 8px"></div>`+notimed.map(mk).join('');
+    body.innerHTML=html;
+  }
+  document.getElementById('cal-detail').style.display='block';
+}
+function hideDetail(){document.getElementById('cal-detail').style.display='none';}
+function changeMonth(dir){
+  curMonth+=dir;
+  if(curMonth>11){curMonth=0;curYear++;}
+  if(curMonth<0){curMonth=11;curYear--;}
+  renderCal();
+}
+
+// PROGRESS
+function renderProgress(){
+  const list=document.getElementById('zone-list');list.innerHTML='';
+  let ts=0,ds=0,totalIn=0,doneZones=0;
+  ZONES.forEach(z=>{
+    const mx=z.total*3;const done=z.반입+z.안착+z.설치;
+    ts+=mx;ds+=done;totalIn+=z.반입;
+    if(z.설치===z.total&&z.total>0)doneZones++;
+    const pct=(done/mx*100).toFixed(1);
+    const inPct=(z.반입/z.total*100).toFixed(1);
+    const anPct=(z.안착/z.total*100).toFixed(1);
+    const instPct=(z.설치/z.total*100).toFixed(1);
+    const div=document.createElement('div');div.className='pjt-zone';
+    div.innerHTML=`<div class="pjt-zone-header">
+      <span class="pjt-zone-name">${z.name} <span style="color:#86868b;font-size:11px;font-weight:400">(${z.total}대)</span></span>
+      <span class="pjt-zone-pct">${pct}%</span></div>
+    <div class="pjt-steps">
+      <div><div class="step-bar"><div class="step-fill step-fill-in" style="width:${inPct}%"></div></div><div class="step-label">반입 ${z.반입}/${z.total}</div></div>
+      <div><div class="step-bar"><div class="step-fill step-fill-an" style="width:${anPct}%"></div></div><div class="step-label">안착 ${z.안착}/${z.total}</div></div>
+      <div><div class="step-bar"><div class="step-fill step-fill-inst" style="width:${instPct}%"></div></div><div class="step-label">설치 ${z.설치}/${z.total}</div></div>
+    </div>`;
+    list.appendChild(div);
+  });
+  document.getElementById('total-pct').textContent=(ds/ts*100).toFixed(1)+'%';
+  document.getElementById('total-in').textContent=totalIn+'대';
+  document.getElementById('done-zones').textContent=doneZones;
+}
+
+function switchTab(name,btn){
+  ['today','twoweek','calendar','progress'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===name?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(name==='twoweek')renderTwoWeek();
+  if(name==='calendar')initCal();
+  if(name==='progress')renderProgress();
+}
+
+// INIT
+initToday();
+renderProgress();
+</script>
+</body>
+</html>
