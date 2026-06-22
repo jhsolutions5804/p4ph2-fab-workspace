@@ -1,7 +1,10 @@
 // =====================================================
-// data.js — P4 Ph2 (FAB) 공유 데이터
+// data.js — P4 Ph2 (FAB) 공유 데이터 + Firebase 인스턴스
 // workspace(index.html)와 daily-report.html이 함께 사용
 // =====================================================
+
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCyQxBJ_ftfM0ImBXubmqD5gfzFR54iPmE",
@@ -11,6 +14,10 @@ export const FIREBASE_CONFIG = {
   messagingSenderId: "36946317914",
   appId: "1:36946317914:web:c6ad5f3a1b98130c99fe63"
 };
+
+// Firebase 앱 & Firestore 인스턴스 — 중복 초기화 방지
+const _app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
+export const db = getFirestore(_app);
 
 export const WORKERS = [
   {id:'w1',name:'서민우',role:'팀장'},
@@ -64,9 +71,7 @@ export const ALL_SCHEDULE = {
     {time:'19:00',text:'FCU 2차 반입 5대(810~814) + 부자재 19대',tag:'fcu',tagLabel:'반입'},
     {time:'23:00',text:'E/V #13 사용',tag:'admin',tagLabel:'행정'},
   ],
-  '2026-06-27':[
-    {time:'10:00',text:'FCU 입고검사 5대(810~814)',tag:'inspect',tagLabel:'검수'},
-  ],
+  '2026-06-27':[{time:'10:00',text:'FCU 입고검사 5대(810~814)',tag:'inspect',tagLabel:'검수'}],
   '2026-06-28':[{time:null,text:'휴무',tag:'off',tagLabel:'휴무'}],
   '2026-06-29':[
     {time:'13:00',text:'안전팀장 회의',tag:'meeting',tagLabel:'회의'},
