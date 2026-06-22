@@ -177,10 +177,10 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       </div>
       <div id="task-list"></div>
 
-      <!-- 일일 보고사항 -->
+      <!-- 업무지시 및 보고 -->
       <div class="report-section">
         <div class="report-title">
-          일일 보고사항
+          업무지시 및 보고
           <span class="sync-indicator">
             <span class="sync-dot" id="sync-dot"></span>
             <span id="sync-label">연결 중...</span>
@@ -199,7 +199,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
           <span class="name-chip" onclick="selectName(this)" data-name="김영서 사원">김영서 사원</span>
         </div>
         <div class="report-input-row">
-          <textarea class="report-input" id="report-input" rows="2" placeholder="공유할 내용을 입력하세요..."></textarea>
+          <textarea class="report-input" id="report-input" rows="2" placeholder="업무지시 또는 보고 내용을 입력하세요..."></textarea>
           <button class="report-submit" onclick="submitReport()">등록</button>
         </div>
         <div class="report-hint">💡 중요한 내용은 춘식이에게 전달하면 일정에 저장해 드려요</div>
@@ -394,7 +394,7 @@ function renderReportList(reports) {
     return;
   }
   if (!reports.length) {
-    el.innerHTML = '<div style="font-size:12px;color:#86868b;padding:6px 0 8px">아직 보고사항이 없어요</div>';
+    el.innerHTML = '<div style="font-size:12px;color:#86868b;padding:6px 0 8px">아직 등록된 내용이 없어요</div>';
     return;
   }
   el.innerHTML = reports.map(r => `
