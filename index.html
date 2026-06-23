@@ -672,12 +672,9 @@ window._progCache = window._progCache || {};
 async function loadFirebaseDayChecks(dateKey, zoneId) {
   try {
     const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const yearMonth = dateKey.slice(0,7); // '2026-06'
-    const ref = doc(db, 'progress_monthly', yearMonth, 'zones', zoneId);
+    const ref = doc(db, 'progress_checks_'+dateKey, zoneId);
     const snap = await getDoc(ref);
-    if (!snap.exists()) return {};
-    const monthData = snap.data();
-    return monthData[dateKey] || {};
+    return snap.exists() ? (snap.data().checks || {}) : {};
   } catch(e) { return {}; }
 }
 
@@ -718,13 +715,10 @@ window._fbSubscribeProgress = async function(dateKey) {
 
   // 현재 날짜 실시간 구독
   const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const yearMonth = dateKey.slice(0,7);
   ZONE_IDS.forEach(zid => {
-    const ref = doc(db, 'progress_monthly', yearMonth, 'zones', zid);
+    const ref = doc(db, 'progress_checks_'+dateKey, zid);
     _progUnsubMap[zid] = onSnapshot(ref, snap => {
-      if (!snap.exists()) { window._progCache[dateKey][zid] = {}; return; }
-      const monthData = snap.data();
-      window._progCache[dateKey][zid] = monthData[dateKey] || {};
+      window._progCache[dateKey][zid] = snap.exists() ? (snap.data().checks || {}) : {};
       if (window._renderProgressUI) window._renderProgressUI();
     });
   });
@@ -734,15 +728,12 @@ window._fbSubscribeProgress = async function(dateKey) {
 window._fbSetProgCheck = async function(dateKey, zoneId, key, isDone) {
   try {
     const { doc, getDoc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const yearMonth = dateKey.slice(0,7);
-    const ref = doc(db, 'progress_monthly', yearMonth, 'zones', zoneId);
+    const ref = doc(db, 'progress_checks_'+dateKey, zoneId);
     const snap = await getDoc(ref);
-    const monthData = snap.exists() ? snap.data() : {};
-    const checks = monthData[dateKey] || {};
+    const checks = snap.exists() ? (snap.data().checks || {}) : {};
     if (isDone) checks[key] = true;
     else delete checks[key];
-    monthData[dateKey] = checks;
-    await setDoc(ref, { ...monthData, updatedAt: serverTimestamp() });
+    await setDoc(ref, { checks, updatedAt: serverTimestamp() });
     window._progCache = window._progCache || {};
     window._progCache[dateKey] = window._progCache[dateKey] || {};
     window._progCache[dateKey][zoneId] = checks;
