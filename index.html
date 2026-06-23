@@ -1519,6 +1519,9 @@ window.setMandayInput=function(workerId,dateKey,raw){
   const m={...(window._mandayCache[dateKey]||{})};
   if(v===0) delete m[workerId]; else m[workerId]=v;
   window._mandayCache[dateKey]=m; // 낙관적 반영
+  // 입력칸을 소수점 첫째자리로 표시 (1 → 1.0)
+  const inp=document.querySelector('#att-worker-list .md-input[data-wid="'+workerId+'"]');
+  if(inp) inp.value = v ? v.toFixed(1) : '';
   if(window._fbSetManday) window._fbSetManday(dateKey,m);
 };
 
@@ -1581,12 +1584,12 @@ function renderKongsuSheet(){
       monthTotal+=daySum;
       if(daySum>0){
         inner+=`<div class="ks-boss-cnt">${present}/${WORKERS.length}명</div>`;
-        inner+=`<div class="ks-boss-sum">${daySum%1?daySum.toFixed(1):daySum}</div>`;
+        inner+=`<div class="ks-boss-sum">${daySum.toFixed(1)}</div>`;
       }
     }else{
       const v=md[_sheetActive]||0;
       monthTotal+=v;
-      if(v>0){ workDays++; inner+=`<div class="ks-md${v<1?' half':''}">${v%1?v.toFixed(1):v}</div>`; }
+      if(v>0){ workDays++; inner+=`<div class="ks-md${v<1?' half':''}">${v.toFixed(1)}</div>`; }
     }
     cells+=`<td class="${cls.trim()}">${inner}</td>`;
     if(dow===6 && day!==days) cells+=`</tr><tr>`;
@@ -1597,10 +1600,10 @@ function renderKongsuSheet(){
   const capId='ks-capture';
   const title=isBoss?`${w.name} 팀장 — 전체 9명 출역 / 공수 합계`:`${w.name} 기술인 공수`;
   const foot = isBoss
-    ? `<div class="ks-foot"><div><div class="fl">월간 공수 합계</div><div class="fv">${monthTotal%1?monthTotal.toFixed(1):monthTotal} 공수</div></div></div>`
+    ? `<div class="ks-foot"><div><div class="fl">월간 공수 합계</div><div class="fv">${monthTotal.toFixed(1)} 공수</div></div></div>`
     : `<div class="ks-foot">
          <div><div class="fl">출역 일수</div><div class="fv green">${workDays}일</div></div>
-         <div><div class="fl">월 공수 합계</div><div class="fv">${monthTotal%1?monthTotal.toFixed(1):monthTotal} 공수</div></div>
+         <div><div class="fl">월 공수 합계</div><div class="fv">${monthTotal.toFixed(1)} 공수</div></div>
        </div>`;
   const fname=`${_sheetY}-${pad(_sheetM+1)}_${isBoss?'전체출역_'+w.name+'팀장':w.name}_공수.png`;
 
@@ -1774,7 +1777,7 @@ function renderAttend(){
     document.querySelectorAll('#att-worker-list .md-input').forEach(inp=>{
       if(document.activeElement===inp) return;
       const v = m[inp.getAttribute('data-wid')] || 0;
-      inp.value = v ? v : '';
+      inp.value = v ? v.toFixed(1) : '';
     });
   };
 
@@ -1808,7 +1811,7 @@ function renderAttend(){
         <span style="font-size:13px;font-weight:600;color:${checked?'#1D5BA6':'#1d1d1f'};min-width:46px">${w.name}${w.role?' '+w.role:''}</span>
         <div style="margin-left:auto;display:flex;align-items:center" onclick="event.stopPropagation()">
           <input class="md-input" type="number" inputmode="decimal" step="0.5" min="0" max="3"
-            data-wid="${w.id}" value="${md?md:''}" placeholder="0"
+            data-wid="${w.id}" value="${md?md.toFixed(1):''}" placeholder="0"
             onchange="setMandayInput('${w.id}','${dateKey}',this.value)">
           <span class="md-unit">공수</span>
         </div>
