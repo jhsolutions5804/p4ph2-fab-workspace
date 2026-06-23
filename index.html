@@ -1499,8 +1499,20 @@ function renderAttend(){
   document.getElementById('att-date-label').textContent=
     'W'+getWeekNum(d)+' · '+(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
 
-  // Firebase 출역 구독 시작
-  if(window._fbSubscribeWorker) window._fbSubscribeWorker(dateKey);
+  // Firebase 출역 구독 시작 (준비된 경우에만)
+  window._renderWorkerUI = renderWorkerList;
+  renderWorkerList(); // 즉시 렌더 (localStorage 기반)
+  if(window._fbSubscribeWorker){
+    window._fbSubscribeWorker(dateKey);
+  } else {
+    // Firebase 모듈 로드 대기 후 구독
+    const waitWorker = setInterval(()=>{
+      if(window._fbSubscribeWorker){
+        clearInterval(waitWorker);
+        window._fbSubscribeWorker(dateKey);
+      }
+    }, 100);
+  }
 
   // ── 휴가 현황 ──
   const el=document.getElementById('att-list');
@@ -1534,8 +1546,7 @@ function renderAttend(){
     }).join('');
   }
 
-  // Firebase onSnapshot 콜백으로 등록
-  window._renderWorkerUI = renderWorkerList;
+  // Firebase onSnapshot이 도착하면 자동으로 renderWorkerList 재호출됨
   renderWorkerList(); // 초기 렌더
 }
 
