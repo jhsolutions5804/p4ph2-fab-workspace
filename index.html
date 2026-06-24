@@ -42,6 +42,40 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .tag-inspect{background:#e8f5e9;color:#1b5e20}
 .tag-off{background:#ffeaea;color:#7f1d1d}
 .tag-leave{background:#fff3e0;color:#e67e22}
+.tag-in{background:#e0f2f1;color:#00695c}
+.tag-work{background:#eceff1;color:#37474f}
+.tag-safety{background:#fff8e1;color:#8d6e00}
+.add-sched-btn{width:100%;padding:11px;border:1.5px dashed #1D5BA6;background:#f4f8ff;color:#1D5BA6;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+.add-sched-btn:active{background:#e8f0fb}
+.user-sched-badge{font-size:9px;padding:1px 6px;border-radius:4px;background:#1D5BA6;color:#fff;font-weight:600;margin-left:2px}
+.cont-badge{font-size:9px;padding:1px 6px;border-radius:4px;background:#eef1f5;color:#86868b;font-weight:600;margin-left:2px}
+.us-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:none;justify-content:center;align-items:flex-end}
+.us-modal.on{display:flex}
+.us-sheet{width:100%;max-width:480px;background:#fff;border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto;animation:usUp .22s ease}
+@keyframes usUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.us-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;position:sticky;top:0;background:#fff;border-bottom:1px solid #f0f0f0;z-index:1}
+.us-head-title{font-size:16px;font-weight:700}
+.us-close{background:none;border:none;font-size:22px;color:#86868b;cursor:pointer;line-height:1}
+.us-body{padding:14px 18px 28px}
+.usf-row{margin-bottom:13px}
+.usf-label{font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block}
+.usf-label .opt{color:#aaa;font-weight:400}
+.usf-input,.usf-select{width:100%;padding:10px 11px;border:1px solid #dde4ef;border-radius:9px;font-size:14px;font-family:inherit;background:#fff;-webkit-appearance:none}
+.usf-input:focus,.usf-select:focus{outline:none;border-color:#1D5BA6}
+.usf-2col{display:flex;gap:8px}
+.usf-2col>div{flex:1;min-width:0}
+.cat-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.cat-chip{padding:6px 12px;border:1px solid #dde4ef;border-radius:20px;font-size:12px;cursor:pointer;background:#fff;color:#555;-webkit-user-select:none;user-select:none}
+.cat-chip.on{background:#1D5BA6;border-color:#1D5BA6;color:#fff;font-weight:600}
+.cat-auto-hint{font-size:11px;color:#1D5BA6;margin-top:5px;min-height:16px}
+.us-save-btn{width:100%;padding:13px;background:#1D5BA6;color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+.us-save-btn:active{background:#174e8f}
+.usd-row{display:flex;padding:9px 0;border-bottom:1px solid #f3f3f3;font-size:14px}
+.usd-row:last-child{border-bottom:none}
+.usd-k{width:68px;flex-shrink:0;color:#86868b;font-size:12px;padding-top:1px}
+.usd-v{flex:1;line-height:1.5;word-break:break-all}
+.usd-v.empty{color:#c0c0c5}
+.us-del-btn{width:100%;padding:11px;background:#fff;color:#c0392b;border:1px solid #f0d0d0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:16px}
 .task-text{font-size:14px;color:#1d1d1f;line-height:1.45}
 .task-text.done-text{color:#c7c7cc;text-decoration:line-through}
 
@@ -252,6 +286,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
         <span class="progress-pill" id="prog-text">0 / 0</span>
       </div>
+      <button class="add-sched-btn" onclick="openUsForm()">＋ 일정 등록</button>
       <div id="task-list"></div>
 
       <!-- 업무지시 및 보고 -->
@@ -397,6 +432,59 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   </div>
 </div>
 
+<!-- 일정 등록 모달 -->
+<div class="us-modal" id="us-form-modal">
+  <div class="us-sheet">
+    <div class="us-head"><span class="us-head-title">일정 등록</span><button class="us-close" onclick="closeUsForm()">✕</button></div>
+    <div class="us-body">
+      <div class="usf-row">
+        <label class="usf-label">일정 내용 <span class="opt">(공란 가능)</span></label>
+        <input class="usf-input" id="usf-text" placeholder="예: FCU 야간 설치 작업" oninput="usAutoDetect()">
+        <div class="cat-auto-hint" id="usf-cat-hint"></div>
+      </div>
+      <div class="usf-row">
+        <label class="usf-label">카테고리 <span class="opt">(자동 추정 · 탭해서 변경)</span></label>
+        <div class="cat-row" id="usf-cat-row"></div>
+      </div>
+      <div class="usf-row">
+        <label class="usf-label">시작 <span class="opt">(공란 가능)</span></label>
+        <div class="usf-2col">
+          <div><input type="date" class="usf-input" id="usf-sdate"></div>
+          <div><select class="usf-select" id="usf-stime"></select></div>
+        </div>
+      </div>
+      <div class="usf-row">
+        <label class="usf-label">종료 <span class="opt">(다중일 가능 · 같은 날이면 비워도 됨)</span></label>
+        <div class="usf-2col">
+          <div><input type="date" class="usf-input" id="usf-edate"></div>
+          <div><select class="usf-select" id="usf-etime"></select></div>
+        </div>
+      </div>
+      <div class="usf-row">
+        <label class="usf-label">장소 <span class="opt">(공란 가능)</span></label>
+        <input class="usf-input" id="usf-place" placeholder="예: 가동 1층 대회의실">
+      </div>
+      <div class="usf-row">
+        <label class="usf-label">참석자 <span class="opt">(공란 가능)</span></label>
+        <input class="usf-input" id="usf-att" placeholder="예: 서민우 팀장, 김혁">
+      </div>
+      <div class="usf-row">
+        <label class="usf-label">등록자 <span class="opt">(상세에서만 표시)</span></label>
+        <input class="usf-input" id="usf-reg" placeholder="본인 이름">
+      </div>
+      <button class="us-save-btn" onclick="saveUsSched()">등록하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 일정 상세 모달 -->
+<div class="us-modal" id="us-detail-modal">
+  <div class="us-sheet">
+    <div class="us-head"><span class="us-head-title">일정 상세</span><button class="us-close" onclick="closeUsDetail()">✕</button></div>
+    <div class="us-body" id="us-detail-body"></div>
+  </div>
+</div>
+
 <!-- PNG 저장용 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -425,6 +513,58 @@ const db = getFirestore(app);
 // Firebase 연결 상태를 전역에 노출
 window._fbDb = db;
 window._fbReady = true;
+
+// ===== 사용자 일정 (user_schedules 컬렉션) =====
+// 메모리 캐시
+let _usCache = [];  // { id, reg, text, place, att, tag, tagLabel, sdate, edate, stime, etime }
+let _usUnsub = null;
+
+// 실시간 구독 (앱 시작 시 1회)
+(function subscribeUserSchedules(){
+  const q = query(collection(db, 'user_schedules'), orderBy('savedAt','asc'));
+  _usUnsub = onSnapshot(q, snap => {
+    _usCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // 구독 갱신 시 현재 보이는 탭 리렌더
+    if(typeof renderToday === 'function') renderToday();
+    if(typeof renderTwoWeek === 'function' && document.getElementById('tab-twoweek').style.display !== 'none') renderTwoWeek();
+    if(typeof renderCal === 'function' && document.getElementById('tab-calendar').style.display !== 'none') renderCal();
+  }, err => console.warn('user_schedules 구독 오류:', err));
+})();
+
+// 특정 날짜에 해당하는 사용자 일정 반환 (다중일 처리 포함)
+window._usItemsForKey = function(key) {
+  const out = [];
+  _usCache.forEach(u => {
+    const sd = u.sdate || key;
+    const ed = u.edate || sd;
+    if(key < sd || key > ed) return;
+    const multi = sd !== ed;
+    let time = null, pos = 'single';
+    if(!multi){
+      time = (!u.stime || u.stime === '미정') ? null : u.stime;
+    } else if(key === sd){
+      time = (!u.stime || u.stime === '미정') ? null : u.stime;
+      pos = 'start';
+    } else if(key === ed){
+      time = (!u.etime || u.etime === '미정') ? null : u.etime;
+      pos = 'end';
+    } else {
+      time = '00~24'; pos = 'mid';
+    }
+    out.push({ ...u, time, _user: true, _pos: pos, _sd: sd, _ed: ed });
+  });
+  return out;
+};
+
+// Firestore 저장
+window._usSave = async function(data) {
+  await addDoc(collection(db, 'user_schedules'), { ...data, savedAt: serverTimestamp() });
+};
+
+// Firestore 삭제
+window._usDelete = async function(id) {
+  await deleteDoc(doc(db, 'user_schedules', id));
+};
 
 // ===== 보고사항 — 날짜별 실시간 구독 =====
 // Firestore 컬렉션: daily_reports_{날짜키}  예) daily_reports_2026-06-23
@@ -1056,9 +1196,13 @@ function renderToday(){
   document.getElementById('today-title').textContent=
     'W'+weekNum+' · '+(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
 
-  const items=ALL_SCHEDULE[key]||[];
-  const timed=items.filter(i=>i.time);
-  const notimed=items.filter(i=>!i.time);
+  // 고정 일정 + 사용자 등록 일정 머지
+  const fixedItems=ALL_SCHEDULE[key]||[];
+  const userItems=window._usItemsForKey?window._usItemsForKey(key):[];
+  const allItems=[...fixedItems,...userItems];
+  const hr=t=>parseInt((t||'99').slice(0,2),10);
+  const timed=allItems.filter(i=>i.time).sort((a,b)=>hr(a.time)-hr(b.time));
+  const notimed=allItems.filter(i=>!i.time);
   // Firebase 구독 시작 (날짜별)
   window._currentCheckKey=key;
   if(window._fbSubscribeChecks) window._fbSubscribeChecks(key);
@@ -1067,7 +1211,7 @@ function renderToday(){
   if(window._fbSubscribeReports) window._fbSubscribeReports(key);
   const savedChecks=(window._fbGetChecks?window._fbGetChecks(key):[])||[];
   const list=document.getElementById('task-list');
-  if(!items.length){
+  if(!allItems.length){
     list.innerHTML='<div style="text-align:center;color:#86868b;font-size:13px;padding:32px 0">등록된 일정이 없어요</div>';
     document.getElementById('prog-text').textContent='0 / 0';
     document.getElementById('prog-bar').style.width='0%';
@@ -1077,10 +1221,14 @@ function renderToday(){
   const mkItem=(i,idx)=>{
     const div=document.createElement('div');div.className='task-item';
     const isDone=savedChecks.includes(idx);
+    const contBadge=i._pos==='end'?'<span class="cont-badge">계속</span>':'';
+    const userBadge=i._user?'<span class="user-sched-badge">등록</span>':'';
     div.innerHTML=`<div class="check${isDone?' done':''}"></div><div class="task-body">
-      <div class="task-meta">${i.time?`<span class="task-time">${i.time}</span>`:''}<span class="tag tag-${i.tag}">${i.tagLabel}</span></div>
-      <div class="task-text${isDone?' done-text':''}">${i.text}</div></div>`;
-    div.onclick=()=>toggleTask(div,key,idx);
+      <div class="task-meta">${i.time?`<span class="task-time">${i.time}</span>`:''}<span class="tag tag-${i.tag}">${i.tagLabel}</span>${userBadge}${contBadge}</div>
+      <div class="task-text${isDone?' done-text':''}">${i.text||'(내용 없음)'}</div></div>`;
+    const chk=div.querySelector('.check');
+    chk.onclick=e=>{e.stopPropagation();toggleTask(div,key,idx);};
+    div.querySelector('.task-body').onclick=()=>openUsDetail(i);
     return div;
   };
   let gi=0;
@@ -1164,7 +1312,8 @@ function renderTwoWeek(){
       const key=toKey(d);
       // ① 오늘 이전 날짜는 주간 탭에서 스킵
       if(d < now) return;
-      const items=ALL_SCHEDULE[key]||[];
+      const userItems=window._usItemsForKey?window._usItemsForKey(key):[];
+      const items=[...(ALL_SCHEDULE[key]||[]),...userItems];
       const dow=d.getDay();
       const isOff=(dow===0||dow===6||!!HOLIDAYS[key])&&!items.some(i=>i.tag==='off');
       const isToday=toKey(now)===key;
@@ -1215,10 +1364,13 @@ function getDots(key){
   const types=new Set();
   const dateObj=new Date(key.replace(/-/g,'/'));
   const dow=dateObj.getDay();
-  const isOff=dow===0||dow===6||!!HOLIDAYS[key]||(ALL_SCHEDULE[key]||[]).some(i=>i.tag==='off');
+  const userItems=window._usItemsForKey?window._usItemsForKey(key):[];
+  const allDotItems=[...(ALL_SCHEDULE[key]||[]),...userItems];
+  const isOff=dow===0||dow===6||!!HOLIDAYS[key]||allDotItems.some(i=>i.tag==='off');
   if(isOff)types.add('off');
-  (ALL_SCHEDULE[key]||[]).forEach(i=>{
+  allDotItems.forEach(i=>{
     if(i.tag==='fcu')types.add('in');
+    else if(i.tag==='in')types.add('in');
     else if(i.tag==='inspect')types.add('check');
     else if(i.tag==='edu')types.add('edu');
     else if(i.tag==='leave')types.add('leave');
@@ -1273,7 +1425,8 @@ function renderCalDetail(key){
   const dow=dows[new Date(y,m-1,d).getDay()];
   const holidayName=HOLIDAYS[key]||'';
   document.getElementById('cal-detail-title').textContent=m+'월 '+d+'일('+dow+')'+(holidayName?' · '+holidayName:'');
-  const items=(ALL_SCHEDULE[key]||[]).filter(i=>i.tag!=='leave'&&CAL_SHOW_LABELS.has(i.tagLabel));
+  const userCalItems=(window._usItemsForKey?window._usItemsForKey(key):[]).filter(i=>i.tag!=='leave');
+  const items=[...(ALL_SCHEDULE[key]||[]).filter(i=>i.tag!=='leave'&&CAL_SHOW_LABELS.has(i.tagLabel)),...userCalItems];
   const dateObj=new Date(y,m-1,d);const dayOfWeek=dateObj.getDay();
   const autoOff=(dayOfWeek===0||dayOfWeek===6||!!HOLIDAYS[key])&&!(ALL_SCHEDULE[key]||[]).some(i=>i.tag==='off');
   const allItems=[...items];
@@ -2080,4 +2233,153 @@ window.generateProgressPPT = async function() {
     status.textContent = '❌ 오류: '+e.message;
   }
 };
+</script>
+
+<script>
+// ===== 사용자 일정 등록/상세 모달 =====
+const US_CATS=[
+  {tag:'edu',label:'교육'},
+  {tag:'meeting',label:'회의'},
+  {tag:'in',label:'반입'},
+  {tag:'fcu',label:'설치'},
+  {tag:'off',label:'휴무'},
+  {tag:'work',label:'공사'},
+  {tag:'safety',label:'안전'},
+  {tag:'admin',label:'기타'},
+];
+const US_LABELS={edu:'교육',meeting:'회의',in:'반입',fcu:'설치',off:'휴무',work:'공사',safety:'안전',admin:'기타'};
+
+let _usCurCat='admin', _usCatTouched=false;
+
+function _usPad(n){return String(n).padStart(2,'0');}
+
+function _usBuildTimeOpts(sel,def){
+  let h='<option value="미정">미정</option>';
+  for(let i=0;i<24;i++)h+=`<option value="${_usPad(i)}:00">${_usPad(i)}:00</option>`;
+  sel.innerHTML=h;
+  sel.value=def||'미정';
+}
+
+function _usBuildCatChips(){
+  document.getElementById('usf-cat-row').innerHTML=US_CATS.map(c=>
+    `<span class="cat-chip${c.tag===_usCurCat?' on':''}" onclick="usPickCat('${c.tag}')">${c.label}</span>`
+  ).join('');
+}
+
+function usPickCat(t){_usCurCat=t;_usCatTouched=true;_usBuildCatChips();document.getElementById('usf-cat-hint').textContent='';}
+
+function usAutoDetect(){
+  if(_usCatTouched)return;
+  const t=document.getElementById('usf-text').value;
+  let tag='admin';
+  if(/회의/.test(t))tag='meeting';
+  else if(/교육|훈련/.test(t))tag='edu';
+  else if(/반입|입고/.test(t))tag='in';
+  else if(/설치|시공|FCU|EHU/.test(t))tag='fcu';
+  else if(/휴무|휴일|휴가/.test(t))tag='off';
+  else if(/안전|점검|대피|소방|TBM/.test(t))tag='safety';
+  else if(/공사|작업|타설|배관|덕트/.test(t))tag='work';
+  _usCurCat=tag;
+  _usBuildCatChips();
+  if(tag!=='admin') document.getElementById('usf-cat-hint').textContent='자동 추정: '+US_LABELS[tag]+' (다르면 위에서 탭해 변경)';
+  else document.getElementById('usf-cat-hint').textContent='';
+}
+
+function openUsForm(){
+  _usCurCat='admin';_usCatTouched=false;
+  ['usf-text','usf-place','usf-att','usf-reg'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('usf-cat-hint').textContent='';
+  // 현재 보고 있는 날짜를 기본값으로
+  const d=typeof getViewDate==='function'?getViewDate():new Date();
+  const key=d.getFullYear()+'-'+_usPad(d.getMonth()+1)+'-'+_usPad(d.getDate());
+  document.getElementById('usf-sdate').value=key;
+  document.getElementById('usf-edate').value=key;
+  _usBuildTimeOpts(document.getElementById('usf-stime'),'미정');
+  _usBuildTimeOpts(document.getElementById('usf-etime'),'미정');
+  _usBuildCatChips();
+  document.getElementById('us-form-modal').classList.add('on');
+}
+
+function closeUsForm(){document.getElementById('us-form-modal').classList.remove('on');}
+
+async function saveUsSched(){
+  let sdate=document.getElementById('usf-sdate').value;
+  let edate=document.getElementById('usf-edate').value||sdate;
+  if(!sdate){const d=typeof getViewDate==='function'?getViewDate():new Date();sdate=d.getFullYear()+'-'+_usPad(d.getMonth()+1)+'-'+_usPad(d.getDate());}
+  if(edate<sdate)edate=sdate;
+  const data={
+    reg:document.getElementById('usf-reg').value.trim(),
+    text:document.getElementById('usf-text').value.trim(),
+    place:document.getElementById('usf-place').value.trim(),
+    att:document.getElementById('usf-att').value.trim(),
+    tag:_usCurCat,
+    tagLabel:US_LABELS[_usCurCat]||'기타',
+    sdate,edate,
+    stime:document.getElementById('usf-stime').value,
+    etime:document.getElementById('usf-etime').value,
+  };
+  try{
+    if(window._usSave) await window._usSave(data);
+    closeUsForm();
+  }catch(e){
+    alert('저장 중 오류가 발생했어요: '+e.message);
+  }
+}
+
+// ===== 상세 모달 =====
+function _usEsc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function _usRangeText(u){
+  const f=s=>{if(!s)return'';const[,m,d]=s.split('-');return(+m)+'/'+(+d);};
+  const sd=u.sdate||'', ed=u.edate||sd;
+  if(sd===ed){
+    if(!u.stime||u.stime==='미정')return f(sd)+' (시간 미정)';
+    return f(sd)+' '+u.stime+(u.etime&&u.etime!=='미정'?' ~ '+u.etime:'');
+  }
+  const s=(!u.stime||u.stime==='미정')?'':' '+u.stime;
+  const e=(!u.etime||u.etime==='미정')?'':' '+u.etime;
+  return f(sd)+s+' ~ '+f(ed)+e;
+}
+
+function openUsDetail(item){
+  const body=document.getElementById('us-detail-body');
+  const row=(k,v)=>v
+    ?`<div class="usd-row"><div class="usd-k">${k}</div><div class="usd-v">${_usEsc(v)}</div></div>`
+    :`<div class="usd-row"><div class="usd-k">${k}</div><div class="usd-v empty">—</div></div>`;
+
+  // 시간 표현
+  let when;
+  if(item._user){
+    when=_usRangeText({sdate:item._sd||item.sdate,edate:item._ed||item.edate,stime:item.stime,etime:item.etime});
+  } else {
+    when=item.time?item.time:'시간 미정';
+  }
+
+  let html='';
+  html+=row('내용',item.text);
+  html+=row('일시',when);
+  html+=`<div class="usd-row"><div class="usd-k">분류</div><div class="usd-v"><span class="tag tag-${item.tag}">${item.tagLabel}</span></div></div>`;
+  html+=row('장소',item.place);
+  html+=row('참석자',item.att);
+  if(item._user) html+=row('등록자',item.reg);
+
+  if(item._user && item.id){
+    html+=`<button class="us-del-btn" onclick="deleteUsSched('${item.id}')">이 일정 삭제</button>`;
+  }
+
+  body.innerHTML=html;
+  document.getElementById('us-detail-modal').classList.add('on');
+}
+
+function closeUsDetail(){document.getElementById('us-detail-modal').classList.remove('on');}
+
+async function deleteUsSched(id){
+  if(!confirm('이 일정을 삭제할까요?'))return;
+  try{
+    if(window._usDelete) await window._usDelete(id);
+    closeUsDetail();
+  }catch(e){
+    alert('삭제 중 오류: '+e.message);
+  }
+}
 </script>
