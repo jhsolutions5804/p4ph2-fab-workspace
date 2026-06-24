@@ -76,6 +76,10 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .usd-v{flex:1;line-height:1.5;word-break:break-all}
 .usd-v.empty{color:#c0c0c5}
 .us-del-btn{width:100%;padding:11px;background:#fff;color:#c0392b;border:1px solid #f0d0d0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:16px}
+.us-edit-btn{width:100%;padding:11px;background:#f4f8ff;color:#1D5BA6;border:1px solid #c0d8f5;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px}
+.us-edit-btn:active{background:#e8f0fb}
+.us-btn-row{display:flex;gap:8px;margin-top:10px}
+.us-btn-row .us-edit-btn,.us-btn-row .us-del-btn{margin-top:0;flex:1}
 .task-text{font-size:14px;color:#1d1d1f;line-height:1.45}
 .task-text.done-text{color:#c7c7cc;text-decoration:line-through}
 
@@ -564,6 +568,11 @@ window._usSave = async function(data) {
 // Firestore 삭제
 window._usDelete = async function(id) {
   await deleteDoc(doc(db, 'user_schedules', id));
+};
+
+// Firestore 수정 (setDoc으로 덮어쓰기)
+window._usUpdate = async function(id, data) {
+  await setDoc(doc(db, 'user_schedules', id), { ...data, savedAt: serverTimestamp() });
 };
 
 // ===== 보고사항 — 날짜별 실시간 구독 =====
@@ -2286,6 +2295,9 @@ function usAutoDetect(){
 }
 
 function openUsForm(){
+  _usEditingId=null;
+  document.querySelector('#us-form-modal .us-head-title').textContent='일정 등록';
+  document.querySelector('.us-save-btn').textContent='등록하기';
   _usCurCat='admin';_usCatTouched=false;
   ['usf-text','usf-place','usf-att','usf-reg'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('usf-cat-hint').textContent='';
@@ -2301,6 +2313,8 @@ function openUsForm(){
 }
 
 function closeUsForm(){document.getElementById('us-form-modal').classList.remove('on');}
+
+let _usEditingId = null; // null=신규, string=수정 중인 doc id
 
 async function saveUsSched(){
   let sdate=document.getElementById('usf-sdate').value;
@@ -2319,8 +2333,14 @@ async function saveUsSched(){
     etime:document.getElementById('usf-etime').value,
   };
   try{
-    if(window._usSave) await window._usSave(data);
+    if(_usEditingId){
+      if(window._usUpdate) await window._usUpdate(_usEditingId, data);
+    } else {
+      if(window._usSave) await window._usSave(data);
+    }
+    _usEditingId=null;
     closeUsForm();
+    closeUsDetail();
   }catch(e){
     alert('저장 중 오류가 발생했어요: '+e.message);
   }
@@ -2364,7 +2384,18 @@ function openUsDetail(item){
   if(item._user) html+=row('등록자',item.reg);
 
   if(item._user && item.id){
-    html+=`<button class="us-del-btn" onclick="deleteUsSched('${item.id}')">이 일정 삭제</button>`;
+    // JSON으로 직렬화해 onclick에 전달 (특수문자 이스케이프)
+    const itemJson=JSON.stringify({
+      id:item.id,
+      reg:item.reg||'',text:item.text||'',place:item.place||'',att:item.att||'',
+      tag:item.tag||'admin',tagLabel:item.tagLabel||'기타',
+      sdate:item._sd||item.sdate||'',edate:item._ed||item.edate||'',
+      stime:item.stime||'미정',etime:item.etime||'미정'
+    }).replace(/'/g,"&#39;");
+    html+=`<div class="us-btn-row">
+      <button class="us-edit-btn" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item='${itemJson}'>수정</button>
+      <button class="us-del-btn" onclick="deleteUsSched('${item.id}')">삭제</button>
+    </div>`;
   }
 
   body.innerHTML=html;
@@ -2372,6 +2403,26 @@ function openUsDetail(item){
 }
 
 function closeUsDetail(){document.getElementById('us-detail-modal').classList.remove('on');}
+
+function openUsEdit(item){
+  closeUsDetail();
+  _usEditingId=item.id;
+  document.querySelector('#us-form-modal .us-head-title').textContent='일정 수정';
+  document.querySelector('.us-save-btn').textContent='수정 완료';
+  _usCurCat=item.tag||'admin';
+  _usCatTouched=true;
+  document.getElementById('usf-cat-hint').textContent='';
+  document.getElementById('usf-text').value=item.text||'';
+  document.getElementById('usf-place').value=item.place||'';
+  document.getElementById('usf-att').value=item.att||'';
+  document.getElementById('usf-reg').value=item.reg||'';
+  document.getElementById('usf-sdate').value=item.sdate||'';
+  document.getElementById('usf-edate').value=item.edate||item.sdate||'';
+  _usBuildTimeOpts(document.getElementById('usf-stime'), item.stime||'미정');
+  _usBuildTimeOpts(document.getElementById('usf-etime'), item.etime||'미정');
+  _usBuildCatChips();
+  document.getElementById('us-form-modal').classList.add('on');
+}
 
 async function deleteUsSched(id){
   if(!confirm('이 일정을 삭제할까요?'))return;
