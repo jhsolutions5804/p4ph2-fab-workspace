@@ -64,6 +64,18 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .usf-input:focus,.usf-select:focus{outline:none;border-color:#1D5BA6}
 .usf-2col{display:flex;gap:8px}
 .usf-2col>div{flex:1;min-width:0}
+.usf-3col{display:flex;gap:6px}
+.usf-3col .col-date{flex:2;min-width:0}
+.usf-3col .col-h{flex:1;min-width:0}
+.usf-3col .col-m{flex:1;min-width:0}
+.usf-todo-wrap{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid #dde4ef;border-radius:9px;cursor:pointer;-webkit-user-select:none;user-select:none;margin-bottom:6px}
+.usf-todo-wrap.on{border-color:#1D5BA6;background:#f4f8ff}
+.usf-todo-cb{width:18px;height:18px;border:2px solid #c7c7cc;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.usf-todo-wrap.on .usf-todo-cb{background:#1D5BA6;border-color:#1D5BA6;color:#fff;font-size:12px}
+.usf-todo-label{font-size:13px;color:#555}
+.usf-todo-wrap.on .usf-todo-label{color:#1D5BA6;font-weight:600}
+.usf-time-block{transition:opacity .15s}
+.usf-time-block.disabled{opacity:.35;pointer-events:none}
 .cat-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 .cat-chip{padding:6px 12px;border:1px solid #dde4ef;border-radius:20px;font-size:12px;cursor:pointer;background:#fff;color:#555;-webkit-user-select:none;user-select:none}
 .cat-chip.on{background:#1D5BA6;border-color:#1D5BA6;color:#fff;font-weight:600}
@@ -451,17 +463,23 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         <div class="cat-row" id="usf-cat-row"></div>
       </div>
       <div class="usf-row">
-        <label class="usf-label">시작 <span class="opt">(공란 가능)</span></label>
-        <div class="usf-2col">
-          <div><input type="date" class="usf-input" id="usf-sdate"></div>
-          <div><select class="usf-select" id="usf-stime"></select></div>
+        <div class="usf-todo-wrap" id="usf-todo-wrap" onclick="toggleUsTodo()">
+          <div class="usf-todo-cb" id="usf-todo-cb"></div>
+          <span class="usf-todo-label">할 일 (시간 없이 체크리스트로 등록)</span>
         </div>
-      </div>
-      <div class="usf-row">
-        <label class="usf-label">종료 <span class="opt">(다중일 가능 · 같은 날이면 비워도 됨)</span></label>
-        <div class="usf-2col">
-          <div><input type="date" class="usf-input" id="usf-edate"></div>
-          <div><select class="usf-select" id="usf-etime"></select></div>
+        <div class="usf-time-block" id="usf-time-block">
+          <label class="usf-label">시작</label>
+          <div class="usf-3col" style="margin-bottom:6px">
+            <div class="col-date"><input type="date" class="usf-input" id="usf-sdate"></div>
+            <div class="col-h"><select class="usf-select" id="usf-sh"></select></div>
+            <div class="col-m"><select class="usf-select" id="usf-sm"></select></div>
+          </div>
+          <label class="usf-label">종료 <span class="opt">(다중일 가능 · 같은 날이면 비워도 됨)</span></label>
+          <div class="usf-3col">
+            <div class="col-date"><input type="date" class="usf-input" id="usf-edate"></div>
+            <div class="col-h"><select class="usf-select" id="usf-eh"></select></div>
+            <div class="col-m"><select class="usf-select" id="usf-em"></select></div>
+          </div>
         </div>
       </div>
       <div class="usf-row">
@@ -544,13 +562,14 @@ window._usItemsForKey = function(key) {
     if(key < sd || key > ed) return;
     const multi = sd !== ed;
     let time = null, pos = 'single';
-    if(!multi){
-      time = (!u.stime || u.stime === '미정') ? null : u.stime;
+    if(u.isTodo){ time=null; pos='single'; }
+    else if(!multi){
+      time = (!u.stime) ? null : u.stime;
     } else if(key === sd){
-      time = (!u.stime || u.stime === '미정') ? null : u.stime;
+      time = (!u.stime) ? null : u.stime;
       pos = 'start';
     } else if(key === ed){
-      time = (!u.etime || u.etime === '미정') ? null : u.etime;
+      time = (!u.etime) ? null : u.etime;
       pos = 'end';
     } else {
       time = '00~24'; pos = 'mid';
@@ -2252,22 +2271,29 @@ const US_CATS=[
   {tag:'in',label:'반입'},
   {tag:'fcu',label:'설치'},
   {tag:'off',label:'휴무'},
-  {tag:'work',label:'공사'},
   {tag:'safety',label:'안전'},
   {tag:'admin',label:'기타'},
 ];
-const US_LABELS={edu:'교육',meeting:'회의',in:'반입',fcu:'설치',off:'휴무',work:'공사',safety:'안전',admin:'기타'};
+const US_LABELS={edu:'교육',meeting:'회의',in:'반입',fcu:'설치',off:'휴무',safety:'안전',admin:'기타'};
 
 let _usCurCat='admin', _usCatTouched=false;
 
 function _usPad(n){return String(n).padStart(2,'0');}
 
-function _usBuildTimeOpts(sel,def){
-  let h='<option value="미정">미정</option>';
-  for(let i=0;i<24;i++)h+=`<option value="${_usPad(i)}:00">${_usPad(i)}:00</option>`;
-  sel.innerHTML=h;
-  sel.value=def||'미정';
+function _usBuildHour(sel,defH){
+  let h='';
+  for(let i=0;i<=24;i++)h+=`<option value="${_usPad(i)}">${_usPad(i)}시</option>`;
+  sel.innerHTML=h; sel.value=_usPad(defH||0);
 }
+function _usBuildMin(sel,defM){
+  let h='';
+  for(let m=0;m<=50;m+=10)h+=`<option value="${_usPad(m)}">${_usPad(m)}분</option>`;
+  sel.innerHTML=h; sel.value=_usPad(defM||0);
+}
+// 시:분 조합 → 'HH:MM' 문자열 반환
+function _usGetTime(hSel,mSel){ return document.getElementById(hSel).value+':'+document.getElementById(mSel).value; }
+// 'HH:MM' 문자열 → {h,m} 분해 (구버전 데이터 호환)
+function _usParseTime(t){ if(!t||t==='미정')return{h:0,m:0}; const[h,m]=(t+':00').split(':'); return{h:parseInt(h)||0,m:parseInt(m)||0}; }
 
 function _usBuildCatChips(){
   document.getElementById('usf-cat-row').innerHTML=US_CATS.map(c=>
@@ -2287,7 +2313,6 @@ function usAutoDetect(){
   else if(/설치|시공|FCU|EHU/.test(t))tag='fcu';
   else if(/휴무|휴일|휴가/.test(t))tag='off';
   else if(/안전|점검|대피|소방|TBM/.test(t))tag='safety';
-  else if(/공사|작업|타설|배관|덕트/.test(t))tag='work';
   _usCurCat=tag;
   _usBuildCatChips();
   if(tag!=='admin') document.getElementById('usf-cat-hint').textContent='자동 추정: '+US_LABELS[tag]+' (다르면 위에서 탭해 변경)';
@@ -2306,8 +2331,11 @@ function openUsForm(){
   const key=d.getFullYear()+'-'+_usPad(d.getMonth()+1)+'-'+_usPad(d.getDate());
   document.getElementById('usf-sdate').value=key;
   document.getElementById('usf-edate').value=key;
-  _usBuildTimeOpts(document.getElementById('usf-stime'),'미정');
-  _usBuildTimeOpts(document.getElementById('usf-etime'),'미정');
+  _usBuildHour(document.getElementById('usf-sh'),0);
+  _usBuildMin(document.getElementById('usf-sm'),0);
+  _usBuildHour(document.getElementById('usf-eh'),0);
+  _usBuildMin(document.getElementById('usf-em'),0);
+  _usSetTodo(false);
   _usBuildCatChips();
   document.getElementById('us-form-modal').classList.add('on');
 }
@@ -2329,8 +2357,9 @@ async function saveUsSched(){
     tag:_usCurCat,
     tagLabel:US_LABELS[_usCurCat]||'기타',
     sdate,edate,
-    stime:document.getElementById('usf-stime').value,
-    etime:document.getElementById('usf-etime').value,
+    isTodo:_usTodo,
+    stime:_usTodo?null:_usGetTime('usf-sh','usf-sm'),
+    etime:_usTodo?null:_usGetTime('usf-eh','usf-em'),
   };
   try{
     if(_usEditingId){
@@ -2418,8 +2447,10 @@ function openUsEdit(item){
   document.getElementById('usf-reg').value=item.reg||'';
   document.getElementById('usf-sdate').value=item.sdate||'';
   document.getElementById('usf-edate').value=item.edate||item.sdate||'';
-  _usBuildTimeOpts(document.getElementById('usf-stime'), item.stime||'미정');
-  _usBuildTimeOpts(document.getElementById('usf-etime'), item.etime||'미정');
+  const sp=_usParseTime(item.stime); const ep=_usParseTime(item.etime);
+  _usBuildHour(document.getElementById('usf-sh'),sp.h); _usBuildMin(document.getElementById('usf-sm'),sp.m);
+  _usBuildHour(document.getElementById('usf-eh'),ep.h); _usBuildMin(document.getElementById('usf-em'),ep.m);
+  _usSetTodo(!!item.isTodo);
   _usBuildCatChips();
   document.getElementById('us-form-modal').classList.add('on');
 }
@@ -2433,4 +2464,16 @@ async function deleteUsSched(id){
     alert('삭제 중 오류: '+e.message);
   }
 }
+// ===== 할 일 체크박스 =====
+let _usTodo=false;
+function _usSetTodo(v){
+  _usTodo=v;
+  const wrap=document.getElementById('usf-todo-wrap');
+  const cb=document.getElementById('usf-todo-cb');
+  const block=document.getElementById('usf-time-block');
+  if(!wrap)return;
+  if(v){wrap.classList.add('on');cb.textContent='✓';block.classList.add('disabled');}
+  else{wrap.classList.remove('on');cb.textContent='';block.classList.remove('disabled');}
+}
+function toggleUsTodo(){_usSetTodo(!_usTodo);}
 </script>
