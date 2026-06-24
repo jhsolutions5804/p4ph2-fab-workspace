@@ -1362,7 +1362,8 @@ function renderTwoWeek(){
       // 휴무 자동 추가
       const displayItems=[...items];
       if(isOff)displayItems.unshift({time:null,text:'휴무'+(HOLIDAYS[key]?' ('+HOLIDAYS[key]+')':dow===0?' (일요일)':' (토요일)'),tag:'off',tagLabel:'휴무'});
-      const timedD=displayItems.filter(i=>i.time);
+      const _hr=t=>parseInt((t||'99').slice(0,2),10);
+      const timedD=displayItems.filter(i=>i.time).sort((a,b)=>_hr(a.time)-_hr(b.time));
       const notimedD=displayItems.filter(i=>!i.time);
 
       html+=`<div style="margin-bottom:10px;border-radius:10px;overflow:hidden;${bgColor}">
