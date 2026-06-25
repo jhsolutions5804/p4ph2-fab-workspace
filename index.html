@@ -2677,7 +2677,7 @@ async function renderHome(){
   var now=getAppToday();
   if(window._fbGetMandayMonth){
     try{
-      await window._fbGetMandayMonth(now.getFullYear(), now.getMonth()+1);
+      await window._fbGetMandayMonth(now.getFullYear(), now.getMonth()); // 0-indexed
     }catch(e){}
   }
 
@@ -2736,7 +2736,7 @@ function waitForFirebaseAndInit() {
       var _now=getAppToday();
       setTimeout(function(){
         if(window._fbGetMandayMonth){
-          window._fbGetMandayMonth(_now.getFullYear(), _now.getMonth()+1);
+          window._fbGetMandayMonth(_now.getFullYear(), _now.getMonth()); // 0-indexed
         }
       }, 500);
       // Firebase 출역 오늘 구독 (홈 카드용)
