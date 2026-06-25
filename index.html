@@ -266,31 +266,121 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .ks-foot .fv{font-size:20px;font-weight:800;color:#0a3d7a;margin-top:2px}
 .ks-foot .fv.green{color:#2e7d32}
 
-/* ===== PC 환경 (900px+) ===== */
+/* ===== PC 레이아웃 (900px+) ===== */
+.pc-sidebar{display:none}
+.pc-topbar{display:none}
 @media (min-width:900px){
-  body{background:#f0f4f8}
-  .app{max-width:100%;background:transparent}
-  /* 헤더 */
-  .header{padding:14px 32px 0;background:#fff;box-shadow:0 1px 0 #e5e5e5}
-  .header-top{margin-bottom:14px}
-  .logo-main{font-size:17px}
-  .logo-sub{font-size:12px}
-  .date-badge{font-size:13px;padding:5px 14px}
-  /* 탭바 */
-  .tab-bar{gap:0;border-bottom:none}
-  .tab{font-size:14px;font-weight:500;padding:12px 24px;flex:none}
-  .tab.active{font-weight:700}
-  /* 콘텐츠 영역 */
-  .content{max-width:960px;margin:0 auto;padding:24px 32px;background:#fff;min-height:calc(100vh - 73px)}
-  /* 공수 집계표 모달 — PC에서 중앙 정렬 */
-  .ks-sheet-wrap{max-width:680px;margin:0 auto;border-radius:16px;height:90vh;margin-top:5vh}
-  /* 일정 모달 — PC에서 중앙 하단 */
-  .us-sheet{max-width:520px;margin:0 auto}
+  body{overflow:hidden;background:#f0f4f8}
+  .ws-wrapper{display:flex;height:100vh}
+  /* --- 사이드바 --- */
+  .pc-sidebar{
+    display:flex;flex-direction:column;
+    width:220px;flex-shrink:0;
+    background:#13335C;height:100vh;overflow-y:auto
+  }
+  .pc-sb-top{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .pc-sb-tag{font-size:10px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.6px;margin-bottom:4px}
+  .pc-sb-name{font-size:15px;font-weight:700;color:#fff}
+  .pc-sb-desc{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+  .pc-sb-stat{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .pc-stat-row{display:flex;gap:8px}
+  .pc-stat-item{flex:1;background:rgba(255,255,255,.1);border-radius:8px;padding:8px 10px}
+  .pc-stat-num{font-size:18px;font-weight:800;color:#5BA4CF}
+  .pc-stat-num.w{color:#fff}
+  .pc-stat-txt{font-size:10px;color:rgba(255,255,255,.5);margin-top:1px}
+  .pc-nav{padding:12px 8px;flex:1}
+  .pc-nav-lbl{font-size:10px;color:rgba(255,255,255,.38);font-weight:600;letter-spacing:.8px;padding:6px 8px 4px}
+  .pc-snav{
+    display:flex;align-items:center;gap:9px;width:100%;
+    padding:9px 10px;font-size:13px;font-weight:500;
+    color:rgba(255,255,255,.65);background:none;border:none;
+    border-radius:8px;cursor:pointer;text-align:left;
+    font-family:inherit;margin-bottom:2px;transition:background .12s,color .12s
+  }
+  .pc-snav:hover{background:rgba(255,255,255,.08);color:#fff}
+  .pc-snav.active{background:#1D5BA6;color:#fff;font-weight:700}
+  .pc-sb-date{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.45)}
+  /* --- 메인 --- */
+  .app{flex:1;max-width:none !important;margin:0 !important;height:100vh;overflow-y:auto;display:flex;flex-direction:column;background:#f0f4f8}
+  .header{display:none !important}
+  /* --- PC 상단바 --- */
+  .pc-topbar{
+    display:flex !important;align-items:center;justify-content:space-between;
+    padding:12px 24px;background:#fff;border-bottom:1px solid #e5e5e5;flex-shrink:0
+  }
+  .pc-topbar .t1{font-size:16px;font-weight:700;color:#1d1d1f}
+  .pc-topbar .t2{font-size:12px;color:#86868b;margin-top:2px}
+  .pc-topbar .r{display:flex;align-items:center;gap:10px}
+  /* --- 콘텐츠 --- */
+  .content{flex:1;padding:20px 24px;overflow-y:auto}
+  /* --- 오늘 탭: 2열 --- */
+  #tab-today{display:grid !important;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
+  .pc-today-l,.pc-today-r{min-width:0}
+  .pc-today-r .report-section{
+    margin-top:0 !important;border-top:none !important;padding-top:0 !important;
+    background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:14px 16px !important
+  }
+  .pc-today-l .add-sched-btn{margin-bottom:12px}
+  /* --- 공정 탭 --- */
+  .total-card{grid-template-columns:repeat(4,1fr) !important}
+  #zone-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  #zone-list .zone-card{margin-bottom:0 !important}
+  /* --- 탭바 숨기기 --- */
+  .tab-bar{display:none !important}
+  /* --- 공수 집계표 모달 PC --- */
+  .ks-modal{align-items:center}
+  .ks-sheet-wrap{max-width:720px;border-radius:16px;height:86vh;margin-top:0}
+  /* --- 일정 등록 모달 PC --- */
+  .us-modal{align-items:center}
+  .us-sheet{max-width:500px;border-radius:18px}
 }
 </style>
 </head>
 <body>
+<div class="ws-wrapper">
+
+<!-- PC 전용 사이드바 -->
+<div class="pc-sidebar">
+  <div class="pc-sb-top">
+    <div class="pc-sb-tag">PJT 업무관리</div>
+    <div class="pc-sb-name">P4 Ph2 (FAB)</div>
+    <div class="pc-sb-desc">귀뚜라미범양냉방 · FCU 설치</div>
+  </div>
+  <div class="pc-sb-stat">
+    <div class="pc-stat-row">
+      <div class="pc-stat-item">
+        <div class="pc-stat-num w">183</div>
+        <div class="pc-stat-txt">전체 물량</div>
+      </div>
+      <div class="pc-stat-item">
+        <div class="pc-stat-num" id="pc-pct">—</div>
+        <div class="pc-stat-txt">공정율</div>
+      </div>
+    </div>
+  </div>
+  <nav class="pc-nav">
+    <div class="pc-nav-lbl">업무</div>
+    <button class="pc-snav active" data-tab="today" onclick="switchTabPC('today',this)">📅 오늘</button>
+    <button class="pc-snav" data-tab="twoweek" onclick="switchTabPC('twoweek',this)">📆 주간</button>
+    <button class="pc-snav" data-tab="calendar" onclick="switchTabPC('calendar',this)">🗓️ 캘린더</button>
+    <button class="pc-snav" data-tab="attend" onclick="switchTabPC('attend',this)">👷 근태</button>
+    <button class="pc-snav" data-tab="progress" onclick="switchTabPC('progress',this)">📊 공정</button>
+  </nav>
+  <div class="pc-sb-date" id="pc-sb-date"></div>
+</div>
+
 <div class="app">
+  <!-- PC 상단바 -->
+  <div class="pc-topbar">
+    <div>
+      <div class="t1" id="pc-top-title">오늘 일정</div>
+      <div class="t2" id="pc-top-sub"></div>
+    </div>
+    <div class="r">
+      <span class="date-badge" id="today-badge-pc"></span>
+      <a href="daily-report.html" style="font-size:12px;color:#1D5BA6;background:#e8f0fb;padding:5px 11px;border-radius:8px;text-decoration:none;font-weight:600;white-space:nowrap;">📋 공사일보</a>
+    </div>
+  </div>
   <div class="header">
     <div class="header-top">
       <div>
@@ -313,6 +403,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 
     <!-- TODAY -->
     <div id="tab-today">
+      <div class="pc-today-l">
       <div class="today-nav">
         <button class="nav-arrow" onclick="changeViewDay(-1)">‹</button>
         <div style="flex:1;text-align:center">
@@ -326,7 +417,9 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       </div>
       <button class="add-sched-btn" onclick="openUsForm()">＋ 일정 등록</button>
       <div id="task-list"></div>
+      </div><!-- /.pc-today-l -->
 
+      <div class="pc-today-r">
       <!-- 업무지시 및 보고 -->
       <div class="report-section">
         <div class="report-title">
@@ -354,6 +447,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         </div>
         <div class="report-hint">💡 중요한 내용은 춘식이에게 전달하면 일정에 저장해 드려요</div>
       </div>
+      </div><!-- /.pc-today-r -->
     </div>
 
     <!-- TWO WEEK -->
@@ -451,7 +545,8 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
     </div>
 
   </div>
-</div>
+</div><!-- /.app -->
+</div><!-- /.ws-wrapper -->
 
 <!-- 공수 집계표 모달 -->
 <div class="ks-modal" id="ks-modal">
@@ -1241,10 +1336,13 @@ function renderToday(){
   const weekNum=getWeekNum(d);
   const key=toKey(d);
   const realToday=getAppToday();
-  document.getElementById('today-badge').textContent=
-    realToday.getFullYear()+'. '+(realToday.getMonth()+1)+'. '+realToday.getDate()+' ('+days[realToday.getDay()]+')';
-  document.getElementById('today-title').textContent=
-    'W'+weekNum+' · '+(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
+  var _dateStr=realToday.getFullYear()+'. '+(realToday.getMonth()+1)+'. '+realToday.getDate()+' ('+days[realToday.getDay()]+')';
+  document.getElementById('today-badge').textContent=_dateStr;
+  var _pcBadge=document.getElementById('today-badge-pc');if(_pcBadge)_pcBadge.textContent=_dateStr;
+  var _pcSbDate=document.getElementById('pc-sb-date');if(_pcSbDate)_pcSbDate.textContent=_dateStr;
+  var _subStr='W'+weekNum+' · '+(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[d.getDay()]+')';
+  document.getElementById('today-title').textContent=_subStr;
+  var _pcSub=document.getElementById('pc-top-sub');if(_pcSub)_pcSub.textContent=_subStr;
 
   // 고정 일정 + 사용자 등록 일정 머지
   const fixedItems=ALL_SCHEDULE[key]||[];
@@ -1565,7 +1663,9 @@ function updateProgressGlobal(){
     grandChecked+=r.totalChecked;grandMax+=r.mx;totalIn+=r.zIn;
     totalInst+=r.instDone;
   });
-  document.getElementById('total-pct').textContent=(grandChecked/grandMax*100).toFixed(1)+'%';
+  var _pctStr=(grandChecked/grandMax*100).toFixed(1)+'%';
+  document.getElementById('total-pct').textContent=_pctStr;
+  var _pcPct=document.getElementById('pc-pct');if(_pcPct)_pcPct.textContent=_pctStr;
   document.getElementById('total-in').textContent=totalIn+'대';
   document.getElementById('total-inst').textContent=totalInst+'대';
 }
@@ -2029,13 +2129,26 @@ function renderAttend(){
 
 // ===== TAB =====
 function switchTab(name,btn){
-  ['today','twoweek','calendar','progress','attend'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  ['today','twoweek','calendar','progress','attend'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  // PC 사이드바 동기화
+  document.querySelectorAll('.pc-snav').forEach(function(b){b.classList.remove('active');});
+  var _pcNav=document.querySelector('.pc-snav[data-tab="'+name+'"]');
+  if(_pcNav) _pcNav.classList.add('active');
+  // PC 상단바 제목
+  var _titles={today:'오늘 일정',twoweek:'주간 일정',calendar:'캘린더',attend:'근태 · 공수',progress:'공정 현황'};
+  var _pt=document.getElementById('pc-top-title');if(_pt)_pt.textContent=_titles[name]||'';
   if(name==='twoweek')renderTwoWeek();
   if(name==='calendar')initCal();
   if(name==='progress')initProgress();
   if(name==='attend')renderAttend();
+}
+
+function switchTabPC(name,btn){
+  switchTab(name,null);
+  document.querySelectorAll('.pc-snav').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
 }
 
 // INIT — Firebase module이 준비된 후 initToday 호출
