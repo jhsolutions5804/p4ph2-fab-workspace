@@ -38,6 +38,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .tag-fcu{background:#e8f0fb;color:#0a3d7a}
 .tag-meeting{background:#fff3e0;color:#5d3a00}
 .tag-edu{background:#f3f0ff;color:#3c2a8a}
+.tag-quality{background:#e3f2fd;color:#0d47a1}
 .tag-admin{background:#f5f5f5;color:#3a3a3a}
 .tag-inspect{background:#e8f5e9;color:#1b5e20}
 .tag-off{background:#ffeaea;color:#7f1d1d}
@@ -640,7 +641,23 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <div class="att-pc-grid">
         <!-- 왼쪽: 기술인 출역 현황 + 공수 -->
         <div class="att-pc-col">
-          <div class="att-col-head">👷 기술인 출역 현황 <span id="att-worker-count" class="att-count-badge"></span></div>
+          <div class="att-col-head" style="display:flex;align-items:center;justify-content:space-between">
+            <span>👷 기술인 출역 현황 <span id="att-worker-count" class="att-count-badge"></span></span>
+            <button onclick="toggleWorkerMgmt()" style="font-size:11px;padding:4px 10px;background:#f0f4f8;border:1px solid #dde4ef;border-radius:8px;cursor:pointer;color:#1D5BA6;font-weight:600">⚙️ 명단 관리</button>
+          </div>
+          <!-- 기술인 명단 관리 패널 -->
+          <div id="worker-mgmt-panel" style="display:none;margin-bottom:12px;background:#f9fafc;border-radius:10px;padding:12px 14px;border:1px solid #e5e5e5">
+            <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:8px">현재 투입 기술인</div>
+            <div id="worker-mgmt-list" style="margin-bottom:10px"></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input id="worker-add-name" type="text" placeholder="이름" style="flex:1;padding:7px 10px;border:1px solid #dde4ef;border-radius:8px;font-size:13px;font-family:inherit">
+              <select id="worker-add-role" style="padding:7px 8px;border:1px solid #dde4ef;border-radius:8px;font-size:12px;font-family:inherit">
+                <option value="">기술인</option>
+                <option value="팀장">팀장</option>
+              </select>
+              <button onclick="addWorkerFromUI()" style="padding:7px 14px;background:#1D5BA6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">추가</button>
+            </div>
+          </div>
           <div id="att-worker-list"></div>
           <div class="att-pc-kongsu">
             <button class="ks-open-btn" onclick="openKongsuModal()">📋 이달 공수 집계표 보기</button>
@@ -848,6 +865,58 @@ const db = getFirestore(app);
 // Firebase 연결 상태를 전역에 노출
 window._fbDb = db;
 window._fbReady = true;
+
+// ===== 기술인 명단 Firebase 관리 =====
+// 컬렉션: pjt_workers_{pjtId}  (현재 FAB = pjt_workers_fab)
+const WORKERS_COLLECTION = 'pjt_workers_fab';
+
+window._fbLoadWorkers = async function(){
+  try{
+    const snap = await getDocs(query(collection(db, WORKERS_COLLECTION), orderBy('order','asc')));
+    if(snap.empty) return false; // 데이터 없으면 하드코딩 fallback
+    window._dynamicWorkers = snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+    return true;
+  }catch(e){ return false; }
+};
+
+window._fbAddWorker = async function(name, role){
+  try{
+    // 현재 최대 번호 계산
+    const snap = await getDocs(collection(db, WORKERS_COLLECTION));
+    let maxNum = 9;
+    snap.docs.forEach(d=>{ const n=parseInt(d.id.replace('w','')); if(n>maxNum) maxNum=n; });
+    const newId = 'w'+(maxNum+1);
+    const order = snap.docs.length + 1;
+    await setDoc(doc(db, WORKERS_COLLECTION, newId), {id:newId, name, role:role||'', order, active:true, createdAt:serverTimestamp()});
+    await window._fbLoadWorkers();
+    if(typeof renderAttend==='function') renderAttend();
+  }catch(e){ alert('추가 실패: '+e.message); }
+};
+
+window._fbDeleteWorker = async function(workerId){
+  if(!confirm('이 기술인을 명단에서 제거할까요?
+(기존 공수·출역 데이터는 유지됩니다)')) return;
+  try{
+    await deleteDoc(doc(db, WORKERS_COLLECTION, workerId));
+    await window._fbLoadWorkers();
+    if(typeof renderAttend==='function') renderAttend();
+  }catch(e){ alert('삭제 실패: '+e.message); }
+};
+
+// 초기 하드코딩 데이터를 Firebase에 마이그레이션 (최초 1회)
+window._fbInitWorkers = async function(hardcodedWorkers){
+  try{
+    const snap = await getDocs(collection(db, WORKERS_COLLECTION));
+    if(!snap.empty) return; // 이미 있으면 skip
+    for(let i=0;i<hardcodedWorkers.length;i++){
+      const w = hardcodedWorkers[i];
+      await setDoc(doc(db, WORKERS_COLLECTION, w.id), {
+        id:w.id, name:w.name, role:w.role||'', order:i+1, active:true, createdAt:serverTimestamp()
+      });
+    }
+    await window._fbLoadWorkers();
+  }catch(e){ console.warn('기술인 초기화 오류:', e); }
+};
 
 // ===== 이달 공수 자동 preload (module 내부 - 동적 import 없이 직접 실행) =====
 (function(){
@@ -2170,7 +2239,8 @@ const LEAVE_COLOR_MAP={'annual':'#c0392b','half-am':'#e67e22','half-pm':'#8e44ad
 const LEAVE_BG_MAP={'annual':'#ffeaea','half-am':'#fff3e0','half-pm':'#f3f0ff'};
 
 // 기술인 명단
-const WORKERS=[
+// 기술인 명단: 코드 기본값 (Firebase 없을 때 fallback)
+const WORKERS_FALLBACK=[
   {id:'w1',name:'서민우',role:'팀장'},
   {id:'w2',name:'김혁',role:''},
   {id:'w3',name:'심산',role:''},
@@ -2181,8 +2251,21 @@ const WORKERS=[
   {id:'w8',name:'태성원',role:''},
   {id:'w9',name:'미첼',role:''},
 ];
-// 기술인 = 서민우(w1) 제외
-const TECHS = WORKERS.filter(w=>w.id!=='w1');
+window._dynamicWorkers = null; // Firebase 로드 후 채워짐
+
+// 현재 활성 기술인 명단 반환
+function getWorkers(){ return window._dynamicWorkers || WORKERS_FALLBACK; }
+
+// 기존 코드 WORKERS 참조는 getWorkers() 호출로 모두 교체됨
+// 아래는 하위 호환을 위한 배열 (Firebase 로드 전까지 사용)
+var WORKERS = WORKERS_FALLBACK;
+var TECHS = WORKERS.filter(w=>w.id!=='w1');
+
+// Firebase 로드 완료 후 WORKERS/TECHS 갱신
+window._refreshWorkerArrays = function(){
+  WORKERS = getWorkers();
+  TECHS = WORKERS.filter(w=>w.id!=='w1');
+};
 
 // ===================================================
 // 공수(man-day) 데이터 — Firebase 실시간 연동
@@ -2422,6 +2505,50 @@ window._fbGetMandayMonth = async function(y, m) {
     await Promise.all(tasks);
     if(typeof _updateHomeKPI==='function') _updateHomeKPI();
   } catch(e) { console.error('월 공수 조회 오류:', e); }
+};
+
+// ── 기술인 명단 관리 UI 함수 ──
+window.toggleWorkerMgmt = function(){
+  var p=document.getElementById('worker-mgmt-panel');
+  if(!p) return;
+  var showing = p.style.display!=='none';
+  p.style.display = showing ? 'none' : 'block';
+  if(!showing) renderWorkerMgmtList();
+};
+
+function renderWorkerMgmtList(){
+  var el=document.getElementById('worker-mgmt-list');
+  if(!el) return;
+  var ws=getWorkers();
+  if(!ws.length){ el.innerHTML='<div style="font-size:12px;color:#86868b">명단이 없습니다</div>'; return; }
+  el.innerHTML=ws.map(function(w){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0">'
+      +'<span style="font-size:13px;color:#1d1d1f">'+(w.role?'<span style="font-size:10px;color:#86868b;margin-right:4px">['+w.role+']</span>':'')+w.name+'</span>'
+      +'<button class="del-worker-btn" data-wid="'+w.id+'" style="font-size:11px;padding:3px 8px;background:#fff;border:1px solid #ffb3b3;border-radius:6px;color:#c0392b;cursor:pointer">삭제</button>'
+    +'</div>';
+  }).join('');
+  // 삭제 버튼 이벤트
+  el.querySelectorAll('.del-worker-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){deleteWorkerFromUI(this.dataset.wid);});
+  });
+}
+
+window.addWorkerFromUI = async function(){
+  var name=document.getElementById('worker-add-name').value.trim();
+  var role=document.getElementById('worker-add-role').value;
+  if(!name){ alert('이름을 입력하세요.'); return; }
+  if(!window._fbAddWorker){ alert('Firebase 준비 중입니다. 잠시 후 시도해주세요.'); return; }
+  await window._fbAddWorker(name, role);
+  document.getElementById('worker-add-name').value='';
+  if(window._refreshWorkerArrays) window._refreshWorkerArrays();
+  renderWorkerMgmtList();
+};
+
+window.deleteWorkerFromUI = async function(wid){
+  if(!window._fbDeleteWorker){ alert('Firebase 준비 중입니다.'); return; }
+  await window._fbDeleteWorker(wid);
+  if(window._refreshWorkerArrays) window._refreshWorkerArrays();
+  renderWorkerMgmtList();
 };
 
 function renderAttend(){
@@ -2811,6 +2938,15 @@ window.openProgPanel=function(zoneId){
 // → 짧은 polling으로 Firebase 준비 후 실행
 function waitForFirebaseAndInit() {
   if (window._fbSubscribeReports && window._fbSubscribeChecks && window._fbSubscribeProgress) {
+    // 기술인 명단 Firebase 로드 (없으면 초기 데이터 마이그레이션)
+    if(window._fbInitWorkers && window._fbLoadWorkers){
+      window._fbInitWorkers(WORKERS_FALLBACK).then(function(){
+        if(!window._dynamicWorkers) window._fbLoadWorkers().then(function(){
+          if(window._refreshWorkerArrays) window._refreshWorkerArrays();
+        });
+        if(window._refreshWorkerArrays) window._refreshWorkerArrays();
+      });
+    }
     initToday();
     // PC에서 홈 탭 자동 활성화
     if(window.innerWidth>=900){
@@ -3082,9 +3218,10 @@ const US_CATS=[
   {tag:'fcu',label:'설치'},
   {tag:'off',label:'휴무'},
   {tag:'safety',label:'안전'},
+  {tag:'quality',label:'품질'},
   {tag:'admin',label:'기타'},
 ];
-const US_LABELS={edu:'교육',meeting:'회의',in:'반입',fcu:'설치',off:'휴무',safety:'안전',admin:'기타'};
+const US_LABELS={edu:'교육',meeting:'회의',in:'반입',fcu:'설치',off:'휴무',safety:'안전',quality:'품질',admin:'기타'};
 
 let _usCurCat='admin', _usCatTouched=false;
 
@@ -3123,6 +3260,7 @@ function usAutoDetect(){
   else if(/설치|시공|FCU|EHU/.test(t))tag='fcu';
   else if(/휴무|휴일|휴가/.test(t))tag='off';
   else if(/안전|점검|대피|소방|TBM/.test(t))tag='safety';
+  else if(/품질|QC|공정회의|KISCO/.test(t))tag='quality';
   _usCurCat=tag;
   _usBuildCatChips();
   if(tag!=='admin') document.getElementById('usf-cat-hint').textContent='자동 추정: '+US_LABELS[tag]+' (다르면 위에서 탭해 변경)';
