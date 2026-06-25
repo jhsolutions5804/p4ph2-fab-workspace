@@ -314,7 +314,22 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   /* --- 콘텐츠 --- */
   .content{flex:1;padding:20px 24px;overflow-y:auto}
   /* --- 오늘 탭: 2열 --- */
-  #tab-today{display:grid !important;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
+  #tab-today{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
+  /* 주간 탭 가로 그리드 */
+  .wk-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px}
+  .wk-day-col{background:#fff;border-radius:10px;border:1px solid #e5e5e5;overflow:hidden;min-height:110px}
+  .wk-day-col.wk-today{border:2px solid #1D5BA6}
+  .wk-day-head{padding:8px 10px;border-bottom:1px solid #f0f0f0;background:#f9f9fb}
+  .wk-day-col.wk-today .wk-day-head{background:#e8f0fb}
+  .wk-day-num{font-size:14px;font-weight:700;color:#1d1d1f}
+  .wk-day-dow{font-size:10px;color:#86868b;margin-top:1px}
+  .wk-day-col.wk-sat .wk-day-num,.wk-day-col.wk-sat .wk-day-dow{color:#1D5BA6}
+  .wk-day-col.wk-today .wk-day-num,.wk-day-col.wk-today .wk-day-dow{color:#1D5BA6}
+  .wk-item{padding:5px 8px;font-size:11px;border-bottom:1px solid #f5f5f5;line-height:1.4;cursor:pointer}
+  .wk-item:last-child{border-bottom:none}
+  .wk-item:hover{background:#f5f5f7}
+  .wk-empty{padding:16px 8px;text-align:center;font-size:11px;color:#c7c7cc}
+  .wk-holi{font-size:9px;color:#c0392b;padding:2px 8px}
   .pc-today-l,.pc-today-r{min-width:0}
   .pc-today-r .report-section{
     margin-top:0 !important;border-top:none !important;padding-top:0 !important;
@@ -1427,82 +1442,123 @@ function getWeekStart(d){
 function renderTwoWeek(){
   const el=document.getElementById('tab-twoweek');
   const now=getAppToday();
-  const days=['일','월','화','수','목','금','토'];
-
-  // W+0 시작(이번 주 월요일), W+1 시작(다음 주 월요일)
+  const DAY=['일','월','화','수','목','금','토'];
   const w0Start=getWeekStart(now);
   const w1Start=new Date(w0Start);w1Start.setDate(w0Start.getDate()+7);
+  const isPc=window.innerWidth>=900;
 
-  // 두 주 날짜 배열 생성 (월~일 각 7일)
-  const weeks=[
-    {start:w0Start, label:'W'+getWeekNum(w0Start)+' · 이번 주', dates:[]},
-    {start:w1Start, label:'W'+getWeekNum(w1Start)+' · 다음 주', dates:[]},
-  ];
-  weeks.forEach(w=>{
-    for(let i=0;i<7;i++){const d=new Date(w.start);d.setDate(w.start.getDate()+i);w.dates.push(d);}
-  });
+  function getWeekDates(start){
+    const arr=[];
+    for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);arr.push(d);}
+    return arr;
+  }
 
-  const mkRow=i=>`<div class="week-item"><span class="week-time">${i.time||'—'}</span><span class="week-text">${i.text}</span><span class="week-tag tag-${i.tag}">${i.tagLabel}</span></div>`;
-
-  let html='';
-  weeks.forEach(w=>{
-    // 주 헤더
-    const wStartFmt=(w.start.getMonth()+1)+'/'+w.start.getDate();
-    const wEnd=w.dates[6];
-    const wEndFmt=(wEnd.getMonth()+1)+'/'+wEnd.getDate();
-    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:4px">
-      <span style="font-size:13px;font-weight:700;color:#1D5BA6">${w.label}</span>
-      <span style="font-size:11px;color:#86868b">${wStartFmt} ~ ${wEndFmt}</span>
-    </div>`;
-
-    let hasAny=false;
-    w.dates.forEach(d=>{
+  function renderPcWeek(wStart,wLabel){
+    const dates=getWeekDates(wStart);
+    const weekdays=dates.filter(function(d){return d.getDay()!==0;}); // 월~토 (일 제외)
+    const wS=(wStart.getMonth()+1)+'/'+wStart.getDate();
+    const wE=(dates[6].getMonth()+1)+'/'+dates[6].getDate();
+    let h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+    h+='<span style="font-size:13px;font-weight:700;color:#1D5BA6">'+wLabel+'</span>';
+    h+='<span style="font-size:11px;color:#86868b">'+wS+' ~ '+wE+'</span></div>';
+    h+='<div class="wk-grid">';
+    weekdays.forEach(function(d){
       const key=toKey(d);
-      // ① 오늘 이전 날짜는 주간 탭에서 스킵
-      if(d < now) return;
+      const userItems=window._usItemsForKey?window._usItemsForKey(key):[];
+      const fixed=ALL_SCHEDULE[key]||[];
+      const dow=d.getDay();
+      const isToday=toKey(now)===key;
+      const isHoli=!!HOLIDAYS[key];
+      const isOff=dow===0||dow===6||isHoli;
+      const items=[...fixed,...userItems];
+      const isSat=dow===6;
+      let cls='wk-day-col'+(isToday?' wk-today':'')+(isSat?' wk-sat':'');
+      h+='<div class="'+cls+'">';
+      h+='<div class="wk-day-head">';
+      h+='<div class="wk-day-num">'+d.getDate()+'</div>';
+      h+='<div class="wk-day-dow">'+DAY[dow]+'요일</div>';
+      if(isHoli) h+='<div class="wk-holi">'+HOLIDAYS[key]+'</div>';
+      h+='</div>';
+      const display=[];
+      if(isOff&&!items.some(function(i){return i.tag==='off';})){
+        display.push({time:null,text:isHoli?HOLIDAYS[key]:(dow===0?'일요일':'토요일'),tag:'off',tagLabel:'휴무'});
+      }
+      display.push.apply(display,items);
+      if(display.length===0){h+='<div class="wk-empty">—</div>';}
+      else{
+        display.sort(function(a,b){
+          var ta=a.time?parseInt(a.time.slice(0,2),10):99;
+          var tb=b.time?parseInt(b.time.slice(0,2),10):99;
+          return ta-tb;
+        });
+        display.forEach(function(item){
+          h+='<div class="wk-item">';
+          if(item.time) h+='<span style="font-size:10px;font-weight:700;color:#1D5BA6">'+item.time+'</span> ';
+          h+='<span class="tag tag-'+item.tag+'">'+item.tagLabel+'</span> ';
+          h+='<span style="font-size:11px;color:#1d1d1f">'+item.text+'</span>';
+          h+='</div>';
+        });
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+    return h;
+  }
+
+  function renderMobWeek(wStart,wLabel){
+    const dates=getWeekDates(wStart);
+    const wS=(wStart.getMonth()+1)+'/'+wStart.getDate();
+    const wE=(dates[6].getMonth()+1)+'/'+dates[6].getDate();
+    let h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:4px">';
+    h+='<span style="font-size:13px;font-weight:700;color:#1D5BA6">'+wLabel+'</span>';
+    h+='<span style="font-size:11px;color:#86868b">'+wS+' ~ '+wE+'</span></div>';
+    let hasAny=false;
+    dates.forEach(function(d){
+      const key=toKey(d);
+      if(d<now) return;
       const userItems=window._usItemsForKey?window._usItemsForKey(key):[];
       const items=[...(ALL_SCHEDULE[key]||[]),...userItems];
       const dow=d.getDay();
-      const isOff=(dow===0||dow===6||!!HOLIDAYS[key])&&!items.some(i=>i.tag==='off');
+      const isHoli=!!HOLIDAYS[key];
+      const isOff=dow===0||dow===6||isHoli;
       const isToday=toKey(now)===key;
-
-      // 날짜 라벨
-      const dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일('+days[dow]+')';
-      const holidayStr=HOLIDAYS[key]?' · '+HOLIDAYS[key]:'';
-      const isOffAll=dow===0||dow===6||!!HOLIDAYS[key]||items.some(i=>i.tag==='off');
-
-      if(!items.length&&!isOffAll)return; // 일정·휴무 모두 없으면 스킵
-
-      const labelColor=isToday?'#1D5BA6':isOffAll?'#c0392b':'#86868b';
-      const bgColor=isToday?'background:#f0f6ff;border:1.5px solid #1D5BA6;':'';
-
-      const timed=items.filter(i=>i.time);
-      const notimed=items.filter(i=>!i.time);
-
-      // 휴무 자동 추가
-      const displayItems=[...items];
-      if(isOff)displayItems.unshift({time:null,text:'휴무'+(HOLIDAYS[key]?' ('+HOLIDAYS[key]+')':dow===0?' (일요일)':' (토요일)'),tag:'off',tagLabel:'휴무'});
-      const _hr=t=>parseInt((t||'99').slice(0,2),10);
-      const timedD=displayItems.filter(i=>i.time).sort((a,b)=>_hr(a.time)-_hr(b.time));
-      const notimedD=displayItems.filter(i=>!i.time);
-
-      html+=`<div style="margin-bottom:10px;border-radius:10px;overflow:hidden;${bgColor}">
-        <div style="padding:6px 13px 4px;display:flex;align-items:center;gap:6px">
-          ${isToday?'<div style="width:5px;height:5px;border-radius:50%;background:#1D5BA6;flex-shrink:0"></div>':''}
-          <span style="font-size:11px;font-weight:700;color:${labelColor}">${dateLabel}${holidayStr}</span>
-        </div>
-        <div style="padding:0 4px 6px">
-          ${timedD.map(mkRow).join('')}
-          ${notimedD.length?`<div class="week-divider"></div>${notimedD.map(mkRow).join('')}`:''}
-        </div>
-      </div>`;
+      if(!items.length&&!isOff) return;
+      const display=[];
+      if(isOff&&!items.some(function(i){return i.tag==='off';})){
+        display.push({time:null,text:isHoli?HOLIDAYS[key]:(dow===0?'일요일':'토요일'),tag:'off',tagLabel:'휴무'});
+      }
+      display.push.apply(display,items);
+      const lc=isToday?'#1D5BA6':isOff?'#c0392b':'#86868b';
+      const bg=isToday?'background:#f0f6ff;border:1.5px solid #1D5BA6;':'';
+      const dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일('+DAY[dow]+')';
+      const timedD=display.filter(function(i){return i.time;}).sort(function(a,b){return parseInt(a.time,10)-parseInt(b.time,10);});
+      const notimedD=display.filter(function(i){return !i.time;});
+      h+='<div style="margin-bottom:10px;border-radius:10px;overflow:hidden;'+bg+'">';
+      h+='<div style="padding:6px 13px 4px;display:flex;align-items:center;gap:6px">';
+      if(isToday) h+='<div style="width:5px;height:5px;border-radius:50%;background:#1D5BA6;flex-shrink:0"></div>';
+      h+='<span style="font-size:11px;font-weight:700;color:'+lc+'">'+dateLabel+(isHoli?' · '+HOLIDAYS[key]:'')+'</span></div>';
+      h+='<div style="padding:0 4px 6px">';
+      timedD.forEach(function(i){h+='<div class="week-item"><span class="week-time">'+i.time+'</span><span class="week-text">'+i.text+'</span><span class="week-tag tag-'+i.tag+'">'+i.tagLabel+'</span></div>';});
+      if(notimedD.length) notimedD.forEach(function(i){h+='<div class="week-item"><span class="week-time">—</span><span class="week-text">'+i.text+'</span><span class="week-tag tag-'+i.tag+'">'+i.tagLabel+'</span></div>';});
+      h+='</div></div>';
       hasAny=true;
     });
+    if(!hasAny) h+='<div style="text-align:center;color:#86868b;font-size:13px;padding:16px 0">등록된 일정이 없어요</div>';
+    return h;
+  }
 
-    if(!hasAny)html+='<div style="text-align:center;color:#86868b;font-size:13px;padding:16px 0">등록된 일정이 없어요</div>';
+  const w0Label='W'+getWeekNum(w0Start)+' · 이번 주';
+  const w1Label='W'+getWeekNum(w1Start)+' · 다음 주';
+  let html='';
+  if(isPc){
+    html+=renderPcWeek(w0Start,w0Label);
     html+='<div style="height:1px;background:#e5e5e5;margin:16px 0"></div>';
-  });
-
+    html+=renderPcWeek(w1Start,w1Label);
+  } else {
+    html+=renderMobWeek(w0Start,w0Label);
+    html+='<div style="height:1px;background:#e5e5e5;margin:16px 0"></div>';
+    html+=renderMobWeek(w1Start,w1Label);
+  }
   el.innerHTML=html;
 }
 
@@ -2129,7 +2185,7 @@ function renderAttend(){
 
 // ===== TAB =====
 function switchTab(name,btn){
-  ['today','twoweek','calendar','progress','attend'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
+  ['today','twoweek','calendar','progress','attend'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'':'none';});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
   // PC 사이드바 동기화
@@ -2548,19 +2604,20 @@ function openUsDetail(item){
   html+=row('참석자',item.att);
   if(item._user) html+=row('등록자',item.reg);
 
+  // 모든 일정에 수정 버튼 표시 (user 일정은 삭제도 가능)
+  const itemJson=JSON.stringify({
+    id:item.id||null,
+    reg:item.reg||'',text:item.text||'',place:item.place||'',att:item.att||'',
+    tag:item.tag||'admin',tagLabel:item.tagLabel||'기타',
+    sdate:item._sd||item.sdate||(window._currentCheckKey||''),
+    edate:item._ed||item.edate||item._sd||item.sdate||(window._currentCheckKey||''),
+    stime:item.stime||'',etime:item.etime||'',
+    isTodo:item.isTodo||false
+  }).replace(/'/g,"&#39;");
   if(item._user && item.id){
-    // JSON으로 직렬화해 onclick에 전달 (특수문자 이스케이프)
-    const itemJson=JSON.stringify({
-      id:item.id,
-      reg:item.reg||'',text:item.text||'',place:item.place||'',att:item.att||'',
-      tag:item.tag||'admin',tagLabel:item.tagLabel||'기타',
-      sdate:item._sd||item.sdate||'',edate:item._ed||item.edate||'',
-      stime:item.stime||'미정',etime:item.etime||'미정'
-    }).replace(/'/g,"&#39;");
-    html+=`<div class="us-btn-row">
-      <button class="us-edit-btn" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item='${itemJson}'>수정</button>
-      <button class="us-del-btn" onclick="deleteUsSched('${item.id}')">삭제</button>
-    </div>`;
+    html+='<div class="us-btn-row"><button class="us-edit-btn" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item=\''+itemJson+'\'>수정</button><button class="us-del-btn" onclick="deleteUsSched(\''+item.id+'\')">삭제</button></div>';
+  } else {
+    html+='<button class="us-edit-btn" style="margin-top:10px" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item=\''+itemJson+'\'>✏️ 이 일정 수정 · 복사 등록</button>';
   }
 
   body.innerHTML=html;
