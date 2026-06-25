@@ -1383,6 +1383,8 @@ function renderToday(){
   list.innerHTML='';
   const mkItem=(i,idx)=>{
     const div=document.createElement('div');div.className='task-item';
+    // 숨길 고정 일정 처리 (인덱스 유지를 위해 display:none으로)
+    if(!i._user && isHiddenFixed(key,i.text)){div.style.display='none';return div;}
     const isDone=savedChecks.includes(idx);
     const contBadge=i._pos==='end'?'<span class="cont-badge">계속</span>':'';
     const userBadge=i._user?'<span class="user-sched-badge">등록</span>':'';
@@ -1423,8 +1425,8 @@ function toggleTask(el,key,idx){
   updateProgress();
 }
 function updateProgress(){
-  const total=document.querySelectorAll('#task-list .task-item').length;
-  const done=document.querySelectorAll('#task-list .check.done').length;
+  const total=document.querySelectorAll('#task-list .task-item:not([style*="none"])').length;
+  const done=document.querySelectorAll('#task-list .task-item:not([style*="none"]) .check.done').length;
   document.getElementById('prog-bar').style.width=(total?Math.round(done/total*100):0)+'%';
   document.getElementById('prog-text').textContent=done+' / '+total;
 }
@@ -1491,11 +1493,22 @@ function renderTwoWeek(){
           var tb=b.time?parseInt(b.time.slice(0,2),10):99;
           return ta-tb;
         });
+        var _savedCks=(window._fbGetChecks?window._fbGetChecks(key):[])||[];
+        var _allK=[...(ALL_SCHEDULE[key]||[]),...(window._usItemsForKey?window._usItemsForKey(key):[])];
+        var _hr2=function(t){return parseInt((t||'99').slice(0,2),10);};
+        var _timedK=_allK.filter(function(i){return i.time;}).sort(function(a,b){return _hr2(a.time)-_hr2(b.time);});
+        var _ntK=_allK.filter(function(i){return !i.time;});
+        var _ordK=[..._timedK,..._ntK];
+        var _ckMap={};
+        _ordK.forEach(function(item,gi){_ckMap[(item.time||'')+'|'+(item.text||'')]=gi;});
         display.forEach(function(item){
-          h+='<div class="wk-item">';
-          if(item.time) h+='<span style="font-size:10px;font-weight:700;color:#1D5BA6">'+item.time+'</span> ';
-          h+='<span class="tag tag-'+item.tag+'">'+item.tagLabel+'</span> ';
-          h+='<span style="font-size:11px;color:#1d1d1f">'+item.text+'</span>';
+          var _ckIdx=_ckMap[(item.time||'')+'|'+(item.text||'')];
+          var _done=_ckIdx!==undefined&&_savedCks.includes(_ckIdx);
+          var _ds=_done?'color:#c7c7cc;text-decoration:line-through;':'';
+          h+='<div class="wk-item" style="'+_ds+'">';
+          if(item.time) h+='<span style="font-size:10px;font-weight:700;color:'+(_done?'#c7c7cc':'#1D5BA6')+'">'+item.time+'</span> ';
+          h+='<span class="tag tag-'+item.tag+'" style="'+(_done?'opacity:0.4;':'')+'">'+item.tagLabel+'</span> ';
+          h+='<span style="font-size:11px;color:'+(_done?'#c7c7cc':'#1d1d1f')+'">'+item.text+'</span>';
           h+='</div>';
         });
       }
@@ -1531,15 +1544,28 @@ function renderTwoWeek(){
       const lc=isToday?'#1D5BA6':isOff?'#c0392b':'#86868b';
       const bg=isToday?'background:#f0f6ff;border:1.5px solid #1D5BA6;':'';
       const dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일('+DAY[dow]+')';
+      var _mSavedCks=(window._fbGetChecks?window._fbGetChecks(key):[])||[];
+      var _mAll=[...(ALL_SCHEDULE[key]||[]),...(window._usItemsForKey?window._usItemsForKey(key):[])];
+      var _mHr=function(t){return parseInt((t||'99').slice(0,2),10);};
+      var _mTimed=_mAll.filter(function(i){return i.time;}).sort(function(a,b){return _mHr(a.time)-_mHr(b.time);});
+      var _mNt=_mAll.filter(function(i){return !i.time;});
+      var _mOrd=[..._mTimed,..._mNt];
+      var _mCkMap={};
+      _mOrd.forEach(function(item,gi){_mCkMap[(item.time||'')+'|'+(item.text||'')]=gi;});
       const timedD=display.filter(function(i){return i.time;}).sort(function(a,b){return parseInt(a.time,10)-parseInt(b.time,10);});
       const notimedD=display.filter(function(i){return !i.time;});
+      function _mRender(i){
+        var _ck=_mCkMap[(i.time||'')+'|'+(i.text||'')];
+        var _d=_ck!==undefined&&_mSavedCks.includes(_ck);
+        return '<div class="week-item" style="'+(_d?'opacity:0.5;text-decoration:line-through;':'')+'"><span class="week-time">'+(_d?'<s>':'')+( i.time||'—')+(_d?'</s>':'')+'</span><span class="week-text">'+i.text+'</span><span class="week-tag tag-'+i.tag+'" style="'+(_d?'opacity:0.4;':'')+'">'+i.tagLabel+'</span></div>';
+      }
       h+='<div style="margin-bottom:10px;border-radius:10px;overflow:hidden;'+bg+'">';
       h+='<div style="padding:6px 13px 4px;display:flex;align-items:center;gap:6px">';
       if(isToday) h+='<div style="width:5px;height:5px;border-radius:50%;background:#1D5BA6;flex-shrink:0"></div>';
       h+='<span style="font-size:11px;font-weight:700;color:'+lc+'">'+dateLabel+(isHoli?' · '+HOLIDAYS[key]:'')+'</span></div>';
       h+='<div style="padding:0 4px 6px">';
-      timedD.forEach(function(i){h+='<div class="week-item"><span class="week-time">'+i.time+'</span><span class="week-text">'+i.text+'</span><span class="week-tag tag-'+i.tag+'">'+i.tagLabel+'</span></div>';});
-      if(notimedD.length) notimedD.forEach(function(i){h+='<div class="week-item"><span class="week-time">—</span><span class="week-text">'+i.text+'</span><span class="week-tag tag-'+i.tag+'">'+i.tagLabel+'</span></div>';});
+      timedD.forEach(function(i){h+=_mRender(i);});
+      if(notimedD.length) notimedD.forEach(function(i){h+=_mRender(i);});
       h+='</div></div>';
       hasAny=true;
     });
@@ -2184,6 +2210,18 @@ function renderAttend(){
 }
 
 // ===== TAB =====
+
+// ===== 고정 일정 숨기기 (localStorage) =====
+function _getHiddenMap(){try{return JSON.parse(localStorage.getItem('ws_hidden')||'{}');}catch(e){return {};}}
+function isHiddenFixed(dateKey,text){return (_getHiddenMap()[dateKey]||[]).includes(text);}
+function hideFixedItem(dateKey,text){
+  var m=_getHiddenMap();
+  if(!m[dateKey])m[dateKey]=[];
+  if(!m[dateKey].includes(text))m[dateKey].push(text);
+  try{localStorage.setItem('ws_hidden',JSON.stringify(m));}catch(e){}
+  closeUsDetail();renderToday();
+}
+
 function switchTab(name,btn){
   ['today','twoweek','calendar','progress','attend'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'':'none';});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
@@ -2516,7 +2554,8 @@ function openUsForm(){
   document.querySelector('#us-form-modal .us-head-title').textContent='일정 등록';
   document.querySelector('.us-save-btn').textContent='등록하기';
   _usCurCat='admin';_usCatTouched=false;
-  ['usf-text','usf-place','usf-att','usf-reg'].forEach(id=>document.getElementById(id).value='');
+  ['usf-text','usf-place','usf-att'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('usf-reg').value=window._selectedName||'';
   document.getElementById('usf-cat-hint').textContent='';
   // 현재 보고 있는 날짜를 기본값으로
   const d=typeof getViewDate==='function'?getViewDate():new Date();
@@ -2617,7 +2656,12 @@ function openUsDetail(item){
   if(item._user && item.id){
     html+='<div class="us-btn-row"><button class="us-edit-btn" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item=\''+itemJson+'\'>수정</button><button class="us-del-btn" onclick="deleteUsSched(\''+item.id+'\')">삭제</button></div>';
   } else {
-    html+='<button class="us-edit-btn" style="margin-top:10px" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item=\''+itemJson+'\'>✏️ 이 일정 수정 · 복사 등록</button>';
+    var _dk=item._sd||item.sdate||(window._currentCheckKey||'');
+    var _tx=item.text||'';
+    html+='<div class="us-btn-row">';
+    html+='<button class="us-edit-btn" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item=\''+itemJson+'\'>✏️ 수정 · 복사</button>';
+    html+='<button class="us-del-btn" onclick="hideFixedItem(\''+_dk+'\',\''+_tx.replace(/\'/g,\'\\&#39;\')+'\')">숨기기</button>';
+    html+='</div>';
   }
 
   body.innerHTML=html;
