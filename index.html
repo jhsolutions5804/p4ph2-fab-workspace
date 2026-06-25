@@ -2258,6 +2258,7 @@ window._fbSubscribeWorker = async function(dateKey) {
     window._workerCache[dateKey] = snap.exists() ? (snap.data().checks || []) : [];
     // UI 갱신
     if(window._renderWorkerUI) window._renderWorkerUI();
+    if(typeof _updateHomeKPI==='function') _updateHomeKPI();
   }, err => {
     console.error('출역 구독 오류:', err);
     window._workerCache[dateKey] = JSON.parse(localStorage.getItem('worker_ck_'+dateKey)||'[]');
@@ -2302,6 +2303,7 @@ window._fbSubscribeManday = async function(dateKey) {
     _mandayUnsub = onSnapshot(ref, snap => {
       window._mandayCache[dateKey] = snap.exists() ? (snap.data().md || {}) : {};
       if(window._renderMandayUI) window._renderMandayUI();
+      if(typeof _updateHomeKPI==='function') _updateHomeKPI();
     }, err => console.error('공수 구독 오류:', err));
   } catch(e) { console.error('공수 구독 초기화 오류:', e); }
 };
@@ -2312,6 +2314,7 @@ window._fbSetManday = async function(dateKey, md) {
     const ref = doc(window._fbDb, 'worker_manday', dateKey);
     await setDoc(ref, { md, updatedAt: serverTimestamp() });
     window._mandayCache[dateKey] = md;
+    if(typeof _updateHomeKPI==='function') _updateHomeKPI();
   } catch(e) { console.error('공수 저장 오류:', e); }
 };
 
@@ -2331,6 +2334,7 @@ window._fbGetMandayMonth = async function(y, m) {
       })());
     }
     await Promise.all(tasks);
+    if(typeof _updateHomeKPI==='function') _updateHomeKPI();
   } catch(e) { console.error('월 공수 조회 오류:', e); }
 };
 
@@ -2576,15 +2580,66 @@ function printDRDetail(){
 }
 
 // ── 홈 렌더링 ──
-function renderHome(){
-  // 공정율
-  var pct=document.getElementById('total-pct');
-  var homePct=document.getElementById('home-pct');
-  if(pct&&homePct) homePct.textContent=pct.textContent;
-  var pcPct=document.getElementById('pc-pct');
-  if(pcPct&&homePct) pcPct.textContent=homePct.textContent;
+// 홈 KPI 공통 업데이트 함수 (외부에서도 호출 가능)
+function _updateHomeKPI(){
+  var now=getAppToday();
+  var y=now.getFullYear(); var m=now.getMonth()+1;
+  var mStr=m<10?'0'+m:String(m);
 
-  // D+ 계산
+  // ① 공정율 — ZONES 직접 계산 (공정 탭 방문 여부와 무관)
+  var pctStr='—';
+  if(typeof ZONES!=='undefined' && typeof getCksProg==='function' && typeof calcZone==='function'){
+    var gc=0,gm=0;
+    ZONES.forEach(function(z){
+      var r=calcZone(z,getCksProg(z.id));
+      gc+=r.totalChecked; gm+=r.mx;
+    });
+    pctStr=gm>0?(gc/gm*100).toFixed(1)+'%':'0.0%';
+  }
+  var homePctEl=document.getElementById('home-pct');
+  if(homePctEl) homePctEl.textContent=pctStr;
+  var pcPctEl=document.getElementById('pc-pct');
+  if(pcPctEl) pcPctEl.textContent=pctStr;
+  // total-pct 동기화
+  var tpEl=document.getElementById('total-pct');
+  if(tpEl&&pctStr!=='—') tpEl.textContent=pctStr;
+
+  // ② 이달 공수 — _mandayCache 합산
+  var totalMd=0;
+  Object.keys(window._mandayCache||{}).forEach(function(key){
+    if(key.startsWith(y+'-'+mStr)){
+      var md=window._mandayCache[key]||{};
+      Object.values(md).forEach(function(v){totalMd+=v;});
+    }
+  });
+  var mdEl=document.getElementById('home-manday');
+  if(mdEl) mdEl.textContent=totalMd.toFixed(1);
+  var mdSubEl=document.getElementById('home-manday-sub');
+  if(mdSubEl) mdSubEl.textContent=m+'월 합계';
+  var pcMdEl=document.getElementById('pc-manday-total');
+  if(pcMdEl) pcMdEl.textContent=totalMd.toFixed(1);
+
+  // ③ 오늘 출역
+  var todayKey=toKey(now);
+  var checks=window._fbGetWorkerChecks?window._fbGetWorkerChecks(todayKey):[];
+  var wkEl=document.getElementById('home-workers');
+  if(wkEl) wkEl.textContent=checks.length;
+
+  // ④ 섹터 요약
+  if(typeof ZONES!=='undefined' && typeof getCksProg==='function' && typeof calcZone==='function'){
+    var sumHtml=ZONES.map(function(z){
+      var pct=calcZone(z,getCksProg(z.id)).pct;
+      return '<div style="display:flex;justify-content:space-between"><span>'+z.name+'</span>'
+            +'<b style="color:#1D5BA6">'+pct+'%</b></div>';
+    }).join('');
+    window._lastZoneSummary=sumHtml;
+    var sumEl=document.getElementById('home-zone-summary');
+    if(sumEl) sumEl.innerHTML=sumHtml;
+  }
+}
+
+async function renderHome(){
+  // D+ 계산 (동기)
   var savedStart=localStorage.getItem('pjt_start_date')||'';
   var startInp=document.getElementById('home-start-date');
   var ddayEl=document.getElementById('home-dday');
@@ -2602,41 +2657,31 @@ function renderHome(){
     if(startLbl) startLbl.textContent='시작일 미설정';
   }
 
-  // 이달 공수 합산
+  // 동기 KPI (이미 캐시에 있는 데이터로 즉시 표시)
+  _updateHomeKPI();
+
+  // ── 비동기: 공정 구독 시작 (최초 1회만) ──
+  if(!window._homeProgressInited){
+    window._homeProgressInited=true;
+    if(typeof initProgress==='function') initProgress();
+  }
+
+  // ── 비동기: 이달 공수 Firebase 로드 ──
   var now=getAppToday();
-  var y=now.getFullYear(); var m=now.getMonth()+1;
-  var totalMd=0;
-  Object.keys(window._mandayCache||{}).forEach(function(key){
-    if(key.startsWith(y+'-'+(m<10?'0'+m:m))){
-      var md=window._mandayCache[key];
-      Object.values(md).forEach(function(v){totalMd+=v;});
-    }
-  });
-  var mdEl=document.getElementById('home-manday');
-  var mdSubEl=document.getElementById('home-manday-sub');
-  if(mdEl) mdEl.textContent=totalMd.toFixed(1);
-  if(mdSubEl){
-    var mdMonthLabel=m+'월 합계';
-    mdSubEl.textContent=mdMonthLabel;
+  if(window._fbGetMandayMonth){
+    try{
+      await window._fbGetMandayMonth(now.getFullYear(), now.getMonth()+1);
+    }catch(e){}
   }
 
-  // 이달 공수 탭바에도 반영
-  var pcMd=document.getElementById('pc-manday-total');
-  if(pcMd) pcMd.textContent=totalMd.toFixed(1);
-
-  // 오늘 출역 인원
-  var todayKey=toKey(getAppToday());
-  var checks=window._fbGetWorkerChecks?window._fbGetWorkerChecks(todayKey):[];
-  var wkEl=document.getElementById('home-workers');
-  if(wkEl) wkEl.textContent=checks.length;
-
-  // 섹터별 공정율 요약
-  var summaryEl=document.getElementById('home-zone-summary');
-  if(summaryEl&&window._lastZoneSummary){
-    summaryEl.innerHTML=window._lastZoneSummary;
-  } else if(summaryEl){
-    summaryEl.textContent='공정 탭을 방문하면 요약이 표시됩니다.';
+  // ── 비동기: 오늘 출역 구독 시작 ──
+  var todayKey=toKey(now);
+  if(window._fbSubscribeWorker && !window._workerCache[todayKey]){
+    try{ await window._fbSubscribeWorker(todayKey); }catch(e){}
   }
+
+  // 비동기 데이터 수신 후 KPI 재갱신
+  _updateHomeKPI();
 }
 
 // 시작일 저장
