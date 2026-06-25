@@ -265,6 +265,28 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .ks-foot .fl{font-size:11px;color:#86868b}
 .ks-foot .fv{font-size:20px;font-weight:800;color:#0a3d7a;margin-top:2px}
 .ks-foot .fv.green{color:#2e7d32}
+
+/* ===== PC 환경 (900px+) ===== */
+@media (min-width:900px){
+  body{background:#f0f4f8}
+  .app{max-width:100%;background:transparent}
+  /* 헤더 */
+  .header{padding:14px 32px 0;background:#fff;box-shadow:0 1px 0 #e5e5e5}
+  .header-top{margin-bottom:14px}
+  .logo-main{font-size:17px}
+  .logo-sub{font-size:12px}
+  .date-badge{font-size:13px;padding:5px 14px}
+  /* 탭바 */
+  .tab-bar{gap:0;border-bottom:none}
+  .tab{font-size:14px;font-weight:500;padding:12px 24px;flex:none}
+  .tab.active{font-weight:700}
+  /* 콘텐츠 영역 */
+  .content{max-width:960px;margin:0 auto;padding:24px 32px;background:#fff;min-height:calc(100vh - 73px)}
+  /* 공수 집계표 모달 — PC에서 중앙 정렬 */
+  .ks-sheet-wrap{max-width:680px;margin:0 auto;border-radius:16px;height:90vh;margin-top:5vh}
+  /* 일정 모달 — PC에서 중앙 하단 */
+  .us-sheet{max-width:520px;margin:0 auto}
+}
 </style>
 </head>
 <body>
