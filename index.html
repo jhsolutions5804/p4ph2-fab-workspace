@@ -382,7 +382,12 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   .ks-sheet-wrap{max-width:720px;border-radius:16px;height:86vh;margin-top:0}
   .us-modal{align-items:center}
   .us-sheet{max-width:500px;border-radius:18px}
+
+@media print{
+  body>*:not(#dr-print-area){display:none!important}
+  #dr-print-area{display:block!important}
 }
+}}
 </style>
 </head>
 <body>
@@ -678,6 +683,35 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 </div><!-- /.app -->
 </div><!-- /.ws-wrapper -->
 
+<!-- 공사일보 조회 모달 -->
+<div class="us-modal" id="dr-list-modal">
+  <div class="us-sheet" style="max-width:720px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="us-head" style="flex-shrink:0">
+      <span class="us-head-title">📂 공사일보 조회</span>
+      <button class="us-close" onclick="closeDRList()">✕</button>
+    </div>
+    <div id="dr-list-body" style="flex:1;overflow-y:auto;padding:0"></div>
+  </div>
+</div>
+
+<!-- 공사일보 상세 모달 -->
+<div class="us-modal" id="dr-detail-modal">
+  <div class="us-sheet" style="max-width:720px;max-height:92vh;display:flex;flex-direction:column">
+    <div class="us-head" style="flex-shrink:0">
+      <span class="us-head-title" id="dr-detail-title">공사일보 상세</span>
+      <button class="us-close" onclick="closeDRDetail()">✕</button>
+    </div>
+    <div id="dr-detail-body" style="flex:1;overflow-y:auto;padding:16px 18px"></div>
+    <div style="padding:12px 18px;border-top:1px solid #e5e5e5;display:flex;gap:8px;flex-shrink:0">
+      <button onclick="printDRDetail()" style="flex:1;padding:11px;background:#1D5BA6;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">📄 PDF 저장</button>
+      <button onclick="closeDRDetail()" style="padding:11px 20px;background:#f5f5f7;color:#555;border:1px solid #e5e5e5;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF 인쇄 영역 -->
+<div id="dr-print-area" style="display:none"></div>
+
 <!-- 공수 집계표 모달 -->
 <div class="ks-modal" id="ks-modal">
   <div class="ks-sheet-wrap">
@@ -760,7 +794,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, setDoc, getDoc }
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, setDoc, getDoc, getDocs }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // =====================================================
@@ -1215,6 +1249,21 @@ window._edocLeaveItemsForKey = function(key){
   return result;
 };
 
+
+// ===== 공사일보 Firebase 조회 =====
+window._fbGetReportList = async function(){
+  try {
+    const q = query(collection(db,'daily_report_docs'), orderBy('dateKey','desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+  } catch(e){ return []; }
+};
+window._fbGetReportDoc = async function(dateKey){
+  try {
+    const snap = await getDoc(doc(db,'daily_report_docs',dateKey));
+    return snap.exists()?Object.assign({id:snap.id},snap.data()):null;
+  } catch(e){ return null; }
+};
 </script>
 
 <script>
@@ -2425,9 +2474,105 @@ window.adjustManday=function(wid,dateKey,delta){
   if(inp) inp.value=next?next.toFixed(1):'';
 };
 
-// ── 공사일보 목록 (stub - 추후 Firebase 연동) ──
+// ── 공사일보 조회/상세/PDF 기능 ──
 function openDailyReportList(){
-  alert('공사일보 조회 기능은 별도로 구현될 예정입니다.');
+  document.getElementById('dr-list-modal').classList.add('on');
+  loadDRList();
+}
+function closeDRList(){
+  document.getElementById('dr-list-modal').classList.remove('on');
+}
+function closeDRDetail(){
+  document.getElementById('dr-detail-modal').classList.remove('on');
+  document.getElementById('dr-print-area').innerHTML='';
+}
+
+async function loadDRList(){
+  var body=document.getElementById('dr-list-body');
+  body.innerHTML='<div style="text-align:center;padding:32px;color:#86868b;font-size:13px">불러오는 중...</div>';
+  var list=window._fbGetReportList?await window._fbGetReportList():[];
+  if(!list.length){
+    body.innerHTML='<div style="text-align:center;padding:40px;color:#86868b;font-size:13px">저장된 공사일보가 없습니다</div>';
+    return;
+  }
+  body.innerHTML=list.map(function(r){
+    var eid=encodeURIComponent(r.id);
+    return '<div class="dr-list-row" data-id="'+eid+'" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f0f0f0;cursor:pointer">'
+      +'<div>'
+        +'<div style="font-size:14px;font-weight:600;color:#1d1d1f">'+( r.date||r.dateKey||r.id )+'</div>'
+        +'<div style="font-size:12px;color:#86868b;margin-top:2px">'+(r.author||'—')+' · '+(r.site||'—')+'</div>'
+      +'</div>'
+      +'<span style="font-size:12px;color:#1D5BA6;font-weight:600">상세 보기 ›</span>'
+    +'</div>';
+  }).join('');
+  document.querySelectorAll('.dr-list-row').forEach(function(row){
+    row.addEventListener('mouseover',function(){this.style.background='#f9f9fb';});
+    row.addEventListener('mouseout',function(){this.style.background='';});
+    row.addEventListener('click',function(){openDRDetail(decodeURIComponent(this.dataset.id));});
+  });
+}
+
+var _drCurrentDoc=null;
+async function openDRDetail(dateKey){
+  closeDRList();
+  document.getElementById('dr-detail-modal').classList.add('on');
+  var body=document.getElementById('dr-detail-body');
+  body.innerHTML='<div style="text-align:center;padding:32px;color:#86868b;font-size:13px">불러오는 중...</div>';
+  var r=window._fbGetReportDoc?await window._fbGetReportDoc(dateKey):null;
+  if(!r){ body.innerHTML='<div style="color:#c0392b;padding:16px">데이터를 불러올 수 없습니다.</div>'; return; }
+  _drCurrentDoc=r;
+  document.getElementById('dr-detail-title').textContent='공사일보 — '+(r.date||r.dateKey||dateKey);
+  var rows=[
+    ['현장명', r.site||'—'],
+    ['작성일자', r.date||r.dateKey||'—'],
+    ['작성자', r.author||'—'],
+    ['금일 작업', r.today||'—'],
+    ['명일 예정', r.tomorrow||'—'],
+    ['투입 인원', r.count?r.count+'명':'—'],
+    ['사용 장비', r.equip||'—'],
+    ['특이사항', r.remarks||'—'],
+  ];
+  body.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px">'
+    +rows.map(function(row){
+      return '<tr style="border-bottom:1px solid #f0f0f0">'
+        +'<th style="padding:10px 12px;text-align:left;color:#86868b;font-weight:600;width:100px;white-space:nowrap">'+row[0]+'</th>'
+        +'<td style="padding:10px 12px;color:#1d1d1f;white-space:pre-wrap">'+row[1]+'</td>'
+      +'</tr>';
+    }).join('')
+  +'</table>';
+}
+
+function printDRDetail(){
+  if(!_drCurrentDoc){ alert('불러온 데이터가 없습니다.'); return; }
+  var r=_drCurrentDoc;
+  var pa=document.getElementById('dr-print-area');
+  pa.style.display='block';
+  pa.innerHTML='<style>@media print{body>*:not(#dr-print-area){display:none!important}#dr-print-area{display:block!important}}'
+    +'@page{size:A4;margin:18mm}.doc-h{text-align:center;margin-bottom:20px}'
+    +'.doc-h h2{font-size:22px;font-weight:700;letter-spacing:4px}'
+    +'.doc-h p{font-size:12px;color:#555;margin-top:4px}'
+    +'table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}'
+    +'th,td{border:1px solid #ccc;padding:8px 12px}'
+    +'th{background:#f5f5f5;width:100px;text-align:left;font-weight:600}'
+    +'</style>'
+    +'<div class="doc-h"><h2>공 사 일 보</h2><p>'+(r.site||'')+' · 귀뚜라미범양냉방</p></div>'
+    +'<table>'
+    +'<tr><th>현장명</th><td>'+(r.site||'—')+'</td></tr>'
+    +'<tr><th>작성일자</th><td>'+(r.date||r.dateKey||'—')+'</td></tr>'
+    +'<tr><th>작성자</th><td>'+(r.author||'—')+'</td></tr>'
+    +'<tr><th>금일 작업</th><td style="white-space:pre-wrap">'+(r.today||'—')+'</td></tr>'
+    +'<tr><th>명일 예정</th><td style="white-space:pre-wrap">'+(r.tomorrow||'—')+'</td></tr>'
+    +'<tr><th>투입 인원</th><td>'+(r.count?r.count+'명':'—')+'</td></tr>'
+    +'<tr><th>사용 장비</th><td>'+(r.equip||'—')+'</td></tr>'
+    +'<tr><th>특이사항</th><td style="white-space:pre-wrap">'+(r.remarks||'—')+'</td></tr>'
+    +'</table>';
+  var ot=document.title;
+  document.title=(r.date||r.dateKey||'공사일보')+'_공사일보';
+  window.print();
+  setTimeout(function(){
+    pa.style.display='none'; pa.innerHTML='';
+    document.title=ot;
+  },500);
 }
 
 // ── 홈 렌더링 ──
