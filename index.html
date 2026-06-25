@@ -267,96 +267,119 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 .ks-foot .fv.green{color:#2e7d32}
 
 /* ===== PC 레이아웃 (900px+) ===== */
-.pc-sidebar{display:none}
-.pc-topbar{display:none}
+.pc-topnav{display:none}
 @media (min-width:900px){
   body{overflow:hidden;background:#f0f4f8}
-  .ws-wrapper{display:flex;height:100vh}
-  /* --- 사이드바 --- */
-  .pc-sidebar{
-    display:flex;flex-direction:column;
-    width:220px;flex-shrink:0;
-    background:#13335C;height:100vh;overflow-y:auto
-  }
-  .pc-sb-top{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.1)}
-  .pc-sb-tag{font-size:10px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.6px;margin-bottom:4px}
-  .pc-sb-name{font-size:15px;font-weight:700;color:#fff}
-  .pc-sb-desc{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
-  .pc-sb-stat{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
-  .pc-stat-row{display:flex;gap:8px}
-  .pc-stat-item{flex:1;background:rgba(255,255,255,.1);border-radius:8px;padding:8px 10px}
-  .pc-stat-num{font-size:18px;font-weight:800;color:#5BA4CF}
-  .pc-stat-num.w{color:#fff}
-  .pc-stat-txt{font-size:10px;color:rgba(255,255,255,.5);margin-top:1px}
-  .pc-nav{padding:12px 8px;flex:1}
-  .pc-nav-lbl{font-size:10px;color:rgba(255,255,255,.38);font-weight:600;letter-spacing:.8px;padding:6px 8px 4px}
-  .pc-snav{
-    display:flex;align-items:center;gap:9px;width:100%;
-    padding:9px 10px;font-size:13px;font-weight:500;
-    color:rgba(255,255,255,.65);background:none;border:none;
-    border-radius:8px;cursor:pointer;text-align:left;
-    font-family:inherit;margin-bottom:2px;transition:background .12s,color .12s
-  }
-  .pc-snav:hover{background:rgba(255,255,255,.08);color:#fff}
-  .pc-snav.active{background:#1D5BA6;color:#fff;font-weight:700}
-  .pc-sb-date{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.45)}
-  /* --- 메인 --- */
-  .app{flex:1;max-width:none !important;margin:0 !important;height:100vh;overflow-y:auto;display:flex;flex-direction:column;background:#f0f4f8}
+
+  /* 전체 래퍼: 세로 배열 */
+  .ws-wrapper{display:flex;flex-direction:column;height:100vh}
+
+  /* 기존 사이드바·탭바 숨김 */
+  .pc-sidebar{display:none !important}
+  .pc-topbar{display:none !important}
+  .tab-bar{display:none !important}
   .header{display:none !important}
-  /* --- PC 상단바 --- */
-  .pc-topbar{
-    display:flex !important;align-items:center;justify-content:space-between;
-    padding:12px 24px;background:#fff;border-bottom:1px solid #e5e5e5;flex-shrink:0
+
+  /* ── 상단 탭바 ── */
+  .pc-topnav{
+    display:flex;align-items:center;
+    background:#13335C;color:#fff;
+    height:52px;padding:0 20px;flex-shrink:0;gap:0;
   }
-  .pc-topbar .t1{font-size:16px;font-weight:700;color:#1d1d1f}
-  .pc-topbar .t2{font-size:12px;color:#86868b;margin-top:2px}
-  .pc-topbar .r{display:flex;align-items:center;gap:10px}
-  /* --- 콘텐츠 --- */
-  .content{flex:1;padding:20px 24px;overflow-y:auto}
-  /* --- 오늘 탭: 2열 --- */
-  #tab-today{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
-  /* 주간 탭 가로 그리드 */
-  .wk-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px}
-  .wk-day-col{background:#fff;border-radius:10px;border:1px solid #e5e5e5;overflow:hidden;min-height:110px}
-  .wk-day-col.wk-today{border:2px solid #1D5BA6}
-  .wk-day-head{padding:8px 10px;border-bottom:1px solid #f0f0f0;background:#f9f9fb}
-  .wk-day-col.wk-today .wk-day-head{background:#e8f0fb}
-  .wk-day-num{font-size:14px;font-weight:700;color:#1d1d1f}
-  .wk-day-dow{font-size:10px;color:#86868b;margin-top:1px}
-  .wk-day-col.wk-sat .wk-day-num,.wk-day-col.wk-sat .wk-day-dow{color:#1D5BA6}
-  .wk-day-col.wk-today .wk-day-num,.wk-day-col.wk-today .wk-day-dow{color:#1D5BA6}
-  .wk-item{padding:5px 8px;font-size:11px;border-bottom:1px solid #f5f5f5;line-height:1.4;cursor:pointer}
-  .wk-item:last-child{border-bottom:none}
-  .wk-item:hover{background:#f5f5f7}
-  .wk-empty{padding:16px 8px;text-align:center;font-size:11px;color:#c7c7cc}
-  .wk-holi{font-size:9px;color:#c0392b;padding:2px 8px}
+  .pc-topnav-brand{
+    display:flex;flex-direction:column;justify-content:center;
+    padding-right:20px;border-right:1px solid rgba(255,255,255,.15);
+    margin-right:16px;flex-shrink:0;min-width:160px;
+  }
+  .pc-topnav-brand .b1{font-size:14px;font-weight:700;color:#fff;line-height:1.2}
+  .pc-topnav-brand .b2{font-size:10px;color:rgba(255,255,255,.45);margin-top:2px}
+  .pc-topnav-tabs{display:flex;gap:2px;align-items:center}
+  .pc-tnav-btn{
+    display:flex;align-items:center;gap:5px;
+    padding:0 14px;height:36px;
+    font-size:13px;font-weight:500;
+    color:rgba(255,255,255,.7);
+    background:none;border:none;border-radius:8px;
+    cursor:pointer;font-family:inherit;white-space:nowrap;
+    transition:background .12s,color .12s;
+  }
+  .pc-tnav-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+  .pc-tnav-btn.active{background:#1D5BA6;color:#fff;font-weight:700}
+  .pc-topnav-right{
+    margin-left:auto;display:flex;align-items:center;gap:14px;flex-shrink:0;
+  }
+  .pc-topnav-stat{
+    display:flex;gap:18px;align-items:center;
+    padding:6px 14px;background:rgba(255,255,255,.1);
+    border-radius:8px;border:1px solid rgba(255,255,255,.15);
+  }
+  .pc-sitem{display:flex;flex-direction:column;align-items:center}
+  .pc-sitem .sv{font-size:15px;font-weight:800;color:#5BA4CF;line-height:1}
+  .pc-sitem .sl{font-size:9px;color:rgba(255,255,255,.5);margin-top:2px}
+  .pc-topnav-date{font-size:11px;color:rgba(255,255,255,.5)}
+
+  /* ── 앱 메인 영역 ── */
+  .app{flex:1;max-width:none !important;margin:0 !important;
+    overflow-y:auto;display:flex;flex-direction:column;background:#f0f4f8}
+  .content{flex:1;padding:20px 28px;overflow-y:auto;max-width:1440px;margin:0 auto;width:100%;box-sizing:border-box}
+
+  /* ── 홈 탭 ── */
+  .home-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .home-kpi-card{background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:18px 20px}
+  .home-kpi-lbl{font-size:11px;color:#86868b;margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+  .home-kpi-val{font-size:28px;font-weight:800;color:#1d1d1f;letter-spacing:-.5px;line-height:1.1}
+  .home-kpi-val.blue{color:#1D5BA6}
+  .home-kpi-sub{font-size:11px;color:#86868b;margin-top:4px}
+  .home-row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+  .home-card{background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:18px 20px}
+  .home-section-hd{font-size:13px;font-weight:700;color:#1d1d1f;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+  .home-shortcuts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .home-sc{background:#f9fafc;border:1px solid #e5e5e5;border-radius:10px;padding:14px 16px;cursor:pointer;transition:box-shadow .15s,border-color .15s;display:flex;align-items:center;gap:12px}
+  .home-sc:hover{box-shadow:0 2px 12px rgba(0,0,0,.08);border-color:#1D5BA6}
+  .home-sc .sci{font-size:22px;flex-shrink:0}
+  .home-sc .sct{font-size:13px;font-weight:700;color:#1d1d1f}
+  .home-sc .scd{font-size:11px;color:#86868b;margin-top:2px}
+
+  /* ── 오늘 탭 2열 ── */
+  #tab-today{display:grid !important;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
   .pc-today-l,.pc-today-r{min-width:0}
-  .pc-today-r .report-section{
-    margin-top:0 !important;border-top:none !important;padding-top:0 !important;
-    background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:14px 16px !important
-  }
-  .pc-today-l .add-sched-btn{margin-bottom:12px}
-  /* --- 공정 탭 --- */
-  .total-card{grid-template-columns:repeat(4,1fr) !important}
-  #zone-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  #zone-list .zone-card{margin-bottom:0 !important}
-  /* --- 근태 탭 PC 2열 --- */
+  .pc-today-r .report-section{margin-top:0 !important;border-top:none !important;padding-top:0 !important;
+    background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:14px 16px !important}
+
+  /* ── 근태 탭 ── */
   .att-pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
   .att-pc-col{background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:16px 18px;min-width:0}
   .att-col-head{font-size:13px;font-weight:700;color:#1d1d1f;margin-bottom:12px;display:flex;align-items:center;gap:6px}
   .att-count-badge{font-size:11px;font-weight:400;color:#86868b}
   .att-pc-kongsu{margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0}
-  /* --- 공정 탭 PC 개선 --- */
-  #tab-progress .today-nav{max-width:480px}
-  #tab-progress .ppt-btn-wrap{display:flex;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #e5e5e5}
-  #ppt-btn{width:auto !important;padding:10px 24px !important;font-size:13px !important}
-  .zone-bars{grid-template-columns:repeat(3,1fr) !important}
-  /* --- 탭바 숨기기 --- */
-  .tab-bar{display:none !important}
-  /* --- 공수 집계표 모달 PC --- */
+  /* 공수 +/- 버튼 */
+  .md-adj-btn{width:28px;height:30px;border:1px solid #d1d1d6;border-radius:7px;background:#fff;color:#1D5BA6;
+    font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    line-height:1;transition:background .1s}
+  .md-adj-btn:hover{background:#e8f0fb}
+  .md-adj-btn:active{background:#d4e4f7}
+
+  /* ── 공정 탭 2분할 ── */
+  #tab-progress{display:grid !important;grid-template-columns:380px 1fr;gap:16px;align-content:start}
+  .prog-left-col{min-width:0;display:flex;flex-direction:column;gap:10px}
+  .prog-right-col{min-width:0;background:#fff;border-radius:12px;border:1px solid #e5e5e5;overflow:hidden;position:sticky;top:0}
+  .prog-right-empty{display:flex;align-items:center;justify-content:center;height:320px;color:#86868b;font-size:13px;flex-direction:column;gap:8px}
+  .prog-panel-hd{padding:12px 16px;border-bottom:1px solid #e5e5e5;background:#f9fafc;display:flex;align-items:center;justify-content:space-between}
+  .prog-panel-hd .ph-name{font-size:14px;font-weight:700;color:#1d1d1f}
+  .prog-panel-hd .ph-pct{font-size:13px;font-weight:700;color:#1D5BA6;background:#e8f0fb;padding:3px 10px;border-radius:10px}
+  .prog-panel-body{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 200px)}
+  .total-card{grid-template-columns:repeat(4,1fr) !important}
+  #zone-list{display:flex;flex-direction:column;gap:8px}
+  #zone-list .zone-card{margin-bottom:0 !important;cursor:pointer}
+  #zone-list .zone-card:hover .zone-header{background:#f5f5f7}
+  #zone-list .zone-card.selected{border-color:#1D5BA6;border-width:2px}
+  .zone-bars{grid-template-columns:repeat(4,1fr) !important}
+  .ppt-btn-wrap{display:flex;justify-content:flex-end;padding-top:4px}
+  #ppt-btn{width:auto !important;padding:10px 20px !important;font-size:13px !important}
+
+  /* 공수 집계표 모달 */
   .ks-modal{align-items:center}
   .ks-sheet-wrap{max-width:720px;border-radius:16px;height:86vh;margin-top:0}
-  /* --- 일정 등록 모달 PC --- */
   .us-modal{align-items:center}
   .us-sheet{max-width:500px;border-radius:18px}
 }
@@ -365,48 +388,31 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 <body>
 <div class="ws-wrapper">
 
-<!-- PC 전용 사이드바 -->
-<div class="pc-sidebar">
-  <div class="pc-sb-top">
-    <div class="pc-sb-tag">PJT 업무관리</div>
-    <div class="pc-sb-name">P4 Ph2 (FAB)</div>
-    <div class="pc-sb-desc">귀뚜라미범양냉방 · FCU 설치</div>
+<!-- PC 상단 탭바 -->
+<div class="pc-topnav">
+  <div class="pc-topnav-brand">
+    <div class="b1">P4 Ph2 (FAB)</div>
+    <div class="b2">귀뚜라미범양냉방 · FCU 설치</div>
   </div>
-  <div class="pc-sb-stat">
-    <div class="pc-stat-row">
-      <div class="pc-stat-item">
-        <div class="pc-stat-num w">183</div>
-        <div class="pc-stat-txt">전체 물량</div>
-      </div>
-      <div class="pc-stat-item">
-        <div class="pc-stat-num" id="pc-pct">—</div>
-        <div class="pc-stat-txt">공정율</div>
-      </div>
+  <div class="pc-topnav-tabs">
+    <button class="pc-tnav-btn" data-tab="home" onclick="switchTabPC('home',this)">🏠 홈</button>
+    <button class="pc-tnav-btn active" data-tab="today" onclick="switchTabPC('today',this)">📅 오늘</button>
+    <button class="pc-tnav-btn" data-tab="twoweek" onclick="switchTabPC('twoweek',this)">📆 주간</button>
+    <button class="pc-tnav-btn" data-tab="calendar" onclick="switchTabPC('calendar',this)">🗓️ 캘린더</button>
+    <button class="pc-tnav-btn" data-tab="attend" onclick="switchTabPC('attend',this)">👷 근태</button>
+    <button class="pc-tnav-btn" data-tab="progress" onclick="switchTabPC('progress',this)">📊 공정</button>
+  </div>
+  <div class="pc-topnav-right">
+    <div class="pc-topnav-stat">
+      <div class="pc-sitem"><div class="sv" id="pc-pct">—</div><div class="sl">공정율</div></div>
+      <div class="pc-sitem"><div class="sv" id="pc-manday-total">—</div><div class="sl">누적공수</div></div>
     </div>
+    <div class="pc-topnav-date" id="pc-sb-date"></div>
   </div>
-  <nav class="pc-nav">
-    <div class="pc-nav-lbl">업무</div>
-    <button class="pc-snav active" data-tab="today" onclick="switchTabPC('today',this)">📅 오늘</button>
-    <button class="pc-snav" data-tab="twoweek" onclick="switchTabPC('twoweek',this)">📆 주간</button>
-    <button class="pc-snav" data-tab="calendar" onclick="switchTabPC('calendar',this)">🗓️ 캘린더</button>
-    <button class="pc-snav" data-tab="attend" onclick="switchTabPC('attend',this)">👷 근태</button>
-    <button class="pc-snav" data-tab="progress" onclick="switchTabPC('progress',this)">📊 공정</button>
-  </nav>
-  <div class="pc-sb-date" id="pc-sb-date"></div>
 </div>
 
 <div class="app">
-  <!-- PC 상단바 -->
-  <div class="pc-topbar">
-    <div>
-      <div class="t1" id="pc-top-title">오늘 일정</div>
-      <div class="t2" id="pc-top-sub"></div>
-    </div>
-    <div class="r">
-      <span class="date-badge" id="today-badge-pc"></span>
-      <a href="daily-report.html" style="font-size:12px;color:#1D5BA6;background:#e8f0fb;padding:5px 11px;border-radius:8px;text-decoration:none;font-weight:600;white-space:nowrap;">📋 공사일보</a>
-    </div>
-  </div>
+  <!-- pc-topbar 제거: 상단탭바로 통합 -->
   <div class="header">
     <div class="header-top">
       <div>
@@ -426,6 +432,85 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   </div>
 
   <div class="content">
+
+    <!-- HOME -->
+    <div id="tab-home" style="display:none">
+      <!-- KPI 카드 4개 -->
+      <div class="home-kpi-row">
+        <div class="home-kpi-card">
+          <div class="home-kpi-lbl">전체 공정율</div>
+          <div class="home-kpi-val blue" id="home-pct">—</div>
+          <div class="home-kpi-sub">183대 기준</div>
+        </div>
+        <div class="home-kpi-card">
+          <div class="home-kpi-lbl">프로젝트 D+</div>
+          <div class="home-kpi-val" id="home-dday">—</div>
+          <div class="home-kpi-sub" id="home-start-lbl">시작일 미설정</div>
+        </div>
+        <div class="home-kpi-card">
+          <div class="home-kpi-lbl">이달 누적 공수</div>
+          <div class="home-kpi-val blue" id="home-manday">—</div>
+          <div class="home-kpi-sub" id="home-manday-sub">공수 합계</div>
+        </div>
+        <div class="home-kpi-card">
+          <div class="home-kpi-lbl">오늘 출역</div>
+          <div class="home-kpi-val" id="home-workers">—</div>
+          <div class="home-kpi-sub">명</div>
+        </div>
+      </div>
+
+      <!-- 2행: 바로가기 + 설정 -->
+      <div class="home-row2">
+        <!-- 바로가기 -->
+        <div class="home-card">
+          <div class="home-section-hd">⚡ 바로가기</div>
+          <div class="home-shortcuts">
+            <div class="home-sc" onclick="goHomeTab('progress')">
+              <div class="sci">📊</div>
+              <div><div class="sct">공정 현황</div><div class="scd">섹터별 체크 현황</div></div>
+            </div>
+            <div class="home-sc" onclick="goHomeTab('attend')">
+              <div class="sci">👷</div>
+              <div><div class="sct">근태 · 공수</div><div class="scd">출역 및 공수 입력</div></div>
+            </div>
+            <div class="home-sc" onclick="goHomeTab('today')">
+              <div class="sci">📅</div>
+              <div><div class="sct">오늘 일정</div><div class="scd">일정 확인 및 보고</div></div>
+            </div>
+            <div class="home-sc" onclick="window.open('daily-report.html','_blank')">
+              <div class="sci">📋</div>
+              <div><div class="sct">공사일보 작성</div><div class="scd">오늘 공사일보 작성</div></div>
+            </div>
+            <div class="home-sc" onclick="openDailyReportList()">
+              <div class="sci">📂</div>
+              <div><div class="sct">공사일보 조회</div><div class="scd">누적 공사일보 열람</div></div>
+            </div>
+            <div class="home-sc" onclick="document.getElementById('ppt-btn').click()">
+              <div class="sci">📈</div>
+              <div><div class="sct">공정표 PPT</div><div class="scd">공정율 PPT 다운로드</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 프로젝트 설정 -->
+        <div class="home-card">
+          <div class="home-section-hd">⚙️ 프로젝트 설정</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <div style="font-size:12px;color:#86868b;margin-bottom:6px;font-weight:600">공사 시작일</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="date" id="home-start-date" style="border:1px solid #dde4ef;border-radius:8px;padding:7px 11px;font-size:13px;font-family:inherit;outline:none" onchange="saveStartDate(this.value)">
+                <span style="font-size:13px;color:#1D5BA6;font-weight:600" id="home-elapsed"></span>
+              </div>
+            </div>
+            <div id="home-prog-summary" style="background:#f9fafc;border-radius:10px;padding:14px 16px">
+              <div style="font-size:12px;color:#86868b;margin-bottom:8px;font-weight:600">섹터별 공정율</div>
+              <div id="home-zone-summary" style="font-size:12px;color:#555;line-height:1.8">로딩 중...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- TODAY -->
     <div id="tab-today">
@@ -534,7 +619,8 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 
     <!-- PROGRESS -->
     <div id="tab-progress" style="display:none">
-      <!-- 날짜 네비게이터 -->
+      <!-- 왼쪽: 날짜네비+KPI+섹터목록 -->
+      <div class="prog-left-col">
       <div class="today-nav" style="margin-bottom:10px">
         <button class="nav-arrow" onclick="changeProgDay(-1)">‹</button>
         <div style="flex:1;text-align:center">
@@ -565,10 +651,26 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
 
       <!-- PPT 생성 버튼 -->
       <div class="ppt-btn-wrap">
-        <button id="ppt-btn" onclick="generateProgressPPT()" style="padding:14px 28px;background:#1D5BA6;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">
-          📊 공정표 PPT 생성 · 다운로드
+        <button id="ppt-btn" onclick="generateProgressPPT()" style="padding:10px 20px;background:#1D5BA6;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit">
+          📊 PPT 다운로드
         </button>
         <div id="ppt-status" style="font-size:11px;color:#86868b;text-align:center;margin-top:8px;display:none"></div>
+      </div>
+      </div><!-- /.prog-left-col -->
+
+      <!-- 오른쪽: 체크표 패널 -->
+      <div class="prog-right-col">
+        <div class="prog-right-empty" id="prog-panel-empty">
+          <span style="font-size:36px">📋</span>
+          <span>섹터 카드를 클릭하면 체크표가 표시됩니다</span>
+        </div>
+        <div id="prog-panel-wrap" style="display:none">
+          <div class="prog-panel-hd" id="prog-panel-hd">
+            <span class="ph-name" id="prog-panel-name">—</span>
+            <span class="ph-pct" id="prog-panel-pct">0%</span>
+          </div>
+          <div class="prog-panel-body" id="prog-panel-body"></div>
+        </div>
       </div>
     </div>
 
@@ -1789,6 +1891,21 @@ function updateProgressGlobal(){
   });
   var _pctStr=(grandChecked/grandMax*100).toFixed(1)+'%';
   document.getElementById('total-pct').textContent=_pctStr;
+  // 홈 탭 공정율 + 섹터 요약 업데이트
+  var homePctEl=document.getElementById('home-pct');
+  if(homePctEl) homePctEl.textContent=_pctStr;
+  var pcPctEl=document.getElementById('pc-pct');
+  if(pcPctEl) pcPctEl.textContent=_pctStr;
+  // 섹터 요약 생성
+  if(typeof ZONES!=='undefined'){
+    window._lastZoneSummary=ZONES.map(function(z){
+      var cks=getCksProg(z.id);
+      var pct=calcZone(z,cks).pct;
+      return '<div style="display:flex;justify-content:space-between"><span>'+z.name+'</span><b style="color:#1D5BA6">'+pct+'%</b></div>';
+    }).join('');
+    var sumEl=document.getElementById('home-zone-summary');
+    if(sumEl) sumEl.innerHTML=window._lastZoneSummary;
+  }
   var _pcPct=document.getElementById('pc-pct');if(_pcPct)_pcPct.textContent=_pctStr;
   document.getElementById('total-in').textContent=totalIn+'대';
   document.getElementById('total-inst').textContent=totalInst+'대';
@@ -1891,7 +2008,7 @@ function renderProgress(){
     const card=document.createElement('div');
     card.className='zone-card'+(wasOpen?' open':'');card.id='zone-'+z.id;
     card.innerHTML=`
-      <div class="zone-header" onclick="toggleZone('${z.id}')">
+      <div class="zone-header" onclick="if(window.innerWidth>=900){openProgPanel('${z.id}')}else{toggleZone('${z.id}')}">
         <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px">
           <span class="zone-name">${z.name}</span><span class="zone-sub">${z.total}대</span>
         </div></div>
@@ -2237,11 +2354,12 @@ function renderAttend(){
           ${checked?'<div style="width:11px;height:7px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)"></div>':''}
         </div>
         <span style="font-size:13px;font-weight:600;color:${checked?'#1D5BA6':'#1d1d1f'};min-width:46px">${w.name}${w.role?' '+w.role:''}</span>
-        <div style="margin-left:auto;display:flex;align-items:center" onclick="event.stopPropagation()">
+        <div style="margin-left:auto;display:flex;align-items:center;gap:4px" onclick="event.stopPropagation()">
+          <button class="md-adj-btn" onclick="adjustManday('${w.id}','${dateKey}',-0.5)">－</button>
           <input class="md-input" type="number" inputmode="decimal" step="0.5" min="0" max="3"
             data-wid="${w.id}" value="${md?md.toFixed(1):''}" placeholder="0"
             onchange="setMandayInput('${w.id}','${dateKey}',this.value)">
-          <span class="md-unit">공수</span>
+          <button class="md-adj-btn" onclick="adjustManday('${w.id}','${dateKey}',0.5)">＋</button>
         </div>
       </div>`;
     }).join('');
@@ -2266,27 +2384,143 @@ function hideFixedItem(dateKey,text){
 }
 
 function switchTab(name,btn){
-  ['today','twoweek','calendar','progress','attend'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'':'none';});
+  var ALL_TABS=['home','today','twoweek','calendar','progress','attend'];
+  ALL_TABS.forEach(function(t){
+    var el=document.getElementById('tab-'+t);
+    if(el) el.style.display=(t===name)?'':'none';
+  });
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
-  // PC 사이드바 동기화
-  document.querySelectorAll('.pc-snav').forEach(function(b){b.classList.remove('active');});
-  var _pcNav=document.querySelector('.pc-snav[data-tab="'+name+'"]');
+  // 상단 탭바 동기화
+  document.querySelectorAll('.pc-tnav-btn').forEach(function(b){b.classList.remove('active');});
+  var _pcNav=document.querySelector('.pc-tnav-btn[data-tab="'+name+'"]');
   if(_pcNav) _pcNav.classList.add('active');
-  // PC 상단바 제목
-  var _titles={today:'오늘 일정',twoweek:'주간 일정',calendar:'캘린더',attend:'근태 · 공수',progress:'공정 현황'};
-  var _pt=document.getElementById('pc-top-title');if(_pt)_pt.textContent=_titles[name]||'';
-  if(name==='twoweek')renderTwoWeek();
+  if(name==='home')    renderHome();
+  if(name==='twoweek') renderTwoWeek();
   if(name==='calendar')initCal();
   if(name==='progress')initProgress();
-  if(name==='attend')renderAttend();
+  if(name==='attend')  renderAttend();
 }
 
 function switchTabPC(name,btn){
   switchTab(name,null);
-  document.querySelectorAll('.pc-snav').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.pc-tnav-btn').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
 }
+
+function goHomeTab(tabName){
+  switchTab(tabName,null);
+  document.querySelectorAll('.pc-tnav-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.tab===tabName);
+  });
+}
+
+// ── 공수 ±0.5 조정 버튼 ──
+window.adjustManday=function(wid,dateKey,delta){
+  var cur=getMandayMap(dateKey)[wid]||0;
+  var next=Math.min(3,Math.max(0,Math.round((cur+delta)*10)/10));
+  setMandayInput(wid,dateKey,String(next));
+  // 입력칸 즉시 반영
+  var inp=document.querySelector('#att-worker-list .md-input[data-wid="'+wid+'"]');
+  if(inp) inp.value=next?next.toFixed(1):'';
+};
+
+// ── 공사일보 목록 (stub - 추후 Firebase 연동) ──
+function openDailyReportList(){
+  alert('공사일보 조회 기능은 별도로 구현될 예정입니다.');
+}
+
+// ── 홈 렌더링 ──
+function renderHome(){
+  // 공정율
+  var pct=document.getElementById('total-pct');
+  var homePct=document.getElementById('home-pct');
+  if(pct&&homePct) homePct.textContent=pct.textContent;
+  var pcPct=document.getElementById('pc-pct');
+  if(pcPct&&homePct) pcPct.textContent=homePct.textContent;
+
+  // D+ 계산
+  var savedStart=localStorage.getItem('pjt_start_date')||'';
+  var startInp=document.getElementById('home-start-date');
+  var ddayEl=document.getElementById('home-dday');
+  var startLbl=document.getElementById('home-start-lbl');
+  var elapsedEl=document.getElementById('home-elapsed');
+  if(startInp&&savedStart) startInp.value=savedStart;
+  if(savedStart){
+    var sd=new Date(savedStart); var today=new Date();
+    var diff=Math.floor((today-sd)/(1000*60*60*24));
+    if(ddayEl) ddayEl.textContent=diff+'일';
+    if(startLbl) startLbl.textContent=savedStart+' 시작';
+    if(elapsedEl) elapsedEl.textContent='경과 '+diff+'일';
+  } else {
+    if(ddayEl) ddayEl.textContent='—';
+    if(startLbl) startLbl.textContent='시작일 미설정';
+  }
+
+  // 이달 공수 합산
+  var now=getAppToday();
+  var y=now.getFullYear(); var m=now.getMonth()+1;
+  var totalMd=0;
+  Object.keys(window._mandayCache||{}).forEach(function(key){
+    if(key.startsWith(y+'-'+(m<10?'0'+m:m))){
+      var md=window._mandayCache[key];
+      Object.values(md).forEach(function(v){totalMd+=v;});
+    }
+  });
+  var mdEl=document.getElementById('home-manday');
+  var mdSubEl=document.getElementById('home-manday-sub');
+  if(mdEl) mdEl.textContent=totalMd.toFixed(1);
+  if(mdSubEl){
+    var mdMonthLabel=m+'월 합계';
+    mdSubEl.textContent=mdMonthLabel;
+  }
+
+  // 이달 공수 탭바에도 반영
+  var pcMd=document.getElementById('pc-manday-total');
+  if(pcMd) pcMd.textContent=totalMd.toFixed(1);
+
+  // 오늘 출역 인원
+  var todayKey=toKey(getAppToday());
+  var checks=window._fbGetWorkerChecks?window._fbGetWorkerChecks(todayKey):[];
+  var wkEl=document.getElementById('home-workers');
+  if(wkEl) wkEl.textContent=checks.length;
+
+  // 섹터별 공정율 요약
+  var summaryEl=document.getElementById('home-zone-summary');
+  if(summaryEl&&window._lastZoneSummary){
+    summaryEl.innerHTML=window._lastZoneSummary;
+  } else if(summaryEl){
+    summaryEl.textContent='공정 탭을 방문하면 요약이 표시됩니다.';
+  }
+}
+
+// 시작일 저장
+function saveStartDate(v){
+  localStorage.setItem('pjt_start_date',v);
+  renderHome();
+}
+
+// 공정 패널 클릭 (zone-card 클릭 → 우측 패널에 체크표)
+window.openProgPanel=function(zoneId){
+  var z=(typeof ZONES!=='undefined')?ZONES.find(function(z){return z.id===zoneId;}):null;
+  if(!z) return;
+  var cksObj=getCksProg(zoneId);
+  var pct=calcZone(z,cksObj).pct;
+  // selected 클래스 토글
+  document.querySelectorAll('#zone-list .zone-card').forEach(function(el){
+    el.classList.toggle('selected',el.id==='zone-'+zoneId);
+  });
+  var emptyEl=document.getElementById('prog-panel-empty');
+  var wrapEl=document.getElementById('prog-panel-wrap');
+  var nameEl=document.getElementById('prog-panel-name');
+  var pctEl=document.getElementById('prog-panel-pct');
+  var bodyEl=document.getElementById('prog-panel-body');
+  if(emptyEl) emptyEl.style.display='none';
+  if(wrapEl)  wrapEl.style.display='block';
+  if(nameEl)  nameEl.textContent=z.name+' ('+z.total+'대)';
+  if(pctEl)   pctEl.textContent=pct+'%';
+  if(bodyEl)  bodyEl.innerHTML=buildCheckTable(z,cksObj);
+};
 
 // INIT — Firebase module이 준비된 후 initToday 호출
 // type="module" 스크립트는 defer와 동일하게 동작하므로
@@ -2295,6 +2529,14 @@ function switchTabPC(name,btn){
 function waitForFirebaseAndInit() {
   if (window._fbSubscribeReports && window._fbSubscribeChecks && window._fbSubscribeProgress) {
     initToday();
+    // PC에서 홈 탭 자동 활성화
+    if(window.innerWidth>=900){
+      switchTab('home',null);
+      document.querySelectorAll('.pc-tnav-btn').forEach(function(b){
+        b.classList.toggle('active',b.dataset.tab==='home');
+      });
+      setTimeout(renderHome,300);
+    }
   } else {
     setTimeout(waitForFirebaseAndInit, 50);
   }
