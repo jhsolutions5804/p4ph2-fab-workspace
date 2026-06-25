@@ -340,6 +340,17 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   .total-card{grid-template-columns:repeat(4,1fr) !important}
   #zone-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   #zone-list .zone-card{margin-bottom:0 !important}
+  /* --- 근태 탭 PC 2열 --- */
+  .att-pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
+  .att-pc-col{background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:16px 18px;min-width:0}
+  .att-col-head{font-size:13px;font-weight:700;color:#1d1d1f;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .att-count-badge{font-size:11px;font-weight:400;color:#86868b}
+  .att-pc-kongsu{margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0}
+  /* --- 공정 탭 PC 개선 --- */
+  #tab-progress .today-nav{max-width:480px}
+  #tab-progress .ppt-btn-wrap{display:flex;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #e5e5e5}
+  #ppt-btn{width:auto !important;padding:10px 24px !important;font-size:13px !important}
+  .zone-bars{grid-template-columns:repeat(3,1fr) !important}
   /* --- 탭바 숨기기 --- */
   .tab-bar{display:none !important}
   /* --- 공수 집계표 모달 PC --- */
@@ -495,7 +506,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
     <!-- ATTENDANCE -->
     <div id="tab-attend" style="display:none">
       <!-- 날짜 네비게이터 -->
-      <div class="today-nav" style="margin-bottom:14px">
+      <div class="today-nav" style="margin-bottom:16px">
         <button class="nav-arrow" onclick="changeAttendDay(-1)">‹</button>
         <div style="flex:1;text-align:center">
           <div class="today-title" id="att-date-label">—</div>
@@ -503,19 +514,21 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
         <button class="nav-arrow" onclick="changeAttendDay(1)">›</button>
         <button onclick="goAttendToday()" style="font-size:11px;font-weight:600;color:#1D5BA6;background:#e8f0fb;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap;margin-left:4px">오늘</button>
       </div>
-      <!-- 휴가 현황 -->
-      <div id="att-list"></div>
-      <!-- 기술인 출역 현황 -->
-      <div style="margin-top:20px;border-top:2px solid #e5e5e5;padding-top:16px">
-        <div style="font-size:13px;font-weight:600;color:#1d1d1f;margin-bottom:12px;display:flex;align-items:center;gap:6px">
-          👷 기술인 출역 현황
-          <span id="att-worker-count" style="font-size:11px;font-weight:400;color:#86868b"></span>
+      <!-- PC: 2열 그리드 -->
+      <div class="att-pc-grid">
+        <!-- 왼쪽: 기술인 출역 현황 + 공수 -->
+        <div class="att-pc-col">
+          <div class="att-col-head">👷 기술인 출역 현황 <span id="att-worker-count" class="att-count-badge"></span></div>
+          <div id="att-worker-list"></div>
+          <div class="att-pc-kongsu">
+            <button class="ks-open-btn" onclick="openKongsuModal()">📋 이달 공수 집계표 보기</button>
+          </div>
         </div>
-        <div id="att-worker-list"></div>
-      </div>
-      <!-- 공수 집계표 버튼 -->
-      <div style="margin-top:18px;padding-top:16px;border-top:1px solid #e5e5e5">
-        <button class="ks-open-btn" onclick="openKongsuModal()">📋 이달 공수 집계표 보기</button>
+        <!-- 오른쪽: 연차·휴가 현황 -->
+        <div class="att-pc-col">
+          <div class="att-col-head">📅 이 날 연차 · 휴가</div>
+          <div id="att-list"></div>
+        </div>
       </div>
     </div>
 
@@ -551,8 +564,8 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <div id="zone-list"></div>
 
       <!-- PPT 생성 버튼 -->
-      <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e5e5">
-        <button id="ppt-btn" onclick="generateProgressPPT()" style="width:100%;padding:14px;background:#1D5BA6;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">
+      <div class="ppt-btn-wrap">
+        <button id="ppt-btn" onclick="generateProgressPPT()" style="padding:14px 28px;background:#1D5BA6;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">
           📊 공정표 PPT 생성 · 다운로드
         </button>
         <div id="ppt-status" style="font-size:11px;color:#86868b;text-align:center;margin-top:8px;display:none"></div>
@@ -1076,6 +1089,30 @@ window._fbGetProgChecks = function(dateKey, zoneId) {
   return { merged, todayOnly, pastOnly };
 };
 
+// ===== 전자결재 연차(edoc_leave) 구독 → 캘린더 자동 등재 =====
+(function subscribeEdocLeave(){
+  const q = query(collection(db, 'edoc_leave'));
+  onSnapshot(q, function(snap){
+    const typeMap = {'연차':'annual','오전반차':'half-am','오후반차':'half-pm','반차':'half-am','병가':'annual'};
+    window._edocLeaveCache = snap.docs.map(function(d){return Object.assign({id:d.id},d.data());})
+      .filter(function(d){return d.status==='posted'||d.status==='approved';});
+    if(typeof renderCal==='function' && document.getElementById('tab-calendar').style.display!=='none') renderCal();
+    if(typeof renderAttend==='function' && document.getElementById('tab-attend').style.display!=='none') renderAttend();
+  }, function(err){console.warn('edoc_leave 구독 오류:',err);});
+})();
+
+window._edocLeaveItemsForKey = function(key){
+  if(!window._edocLeaveCache) return [];
+  var typeMap={'연차':'annual','오전반차':'half-am','오후반차':'half-pm','반차':'half-am','병가':'annual'};
+  var result=[];
+  window._edocLeaveCache.forEach(function(d){
+    var sd=d.sdate||''; var ed=d.edate||sd;
+    if(!sd||key<sd||key>ed) return;
+    result.push({name:d.authorName||'',type:typeMap[d.leaveType]||'annual',days:d.days||1});
+  });
+  return result;
+};
+
 </script>
 
 <script>
@@ -1311,7 +1348,9 @@ function getAppToday(){
   now.setHours(0,0,0,0);return now;
 }
 function getLeavesFromSchedule(key){
-  return(ALL_SCHEDULE[key]||[]).filter(i=>i.tag==='leave'&&i.leaveInfo).map(i=>i.leaveInfo);
+  var fromSched=(ALL_SCHEDULE[key]||[]).filter(function(i){return i.tag==='leave'&&i.leaveInfo;}).map(function(i){return i.leaveInfo;});
+  var fromFB=window._edocLeaveItemsForKey?window._edocLeaveItemsForKey(key):[];
+  return fromSched.concat(fromFB);
 }
 
 // ===== 이름 선택 =====
@@ -2218,6 +2257,7 @@ function renderAttend(){
 function _getHiddenMap(){try{return JSON.parse(localStorage.getItem('ws_hidden')||'{}');}catch(e){return {};}}
 function isHiddenFixed(dateKey,text){return (_getHiddenMap()[dateKey]||[]).includes(text);}
 function hideFixedItem(dateKey,text){
+  if(!confirm('이 일정을 삭제할까요?\n(이 기기에서만 삭제됩니다)')) return;
   var m=_getHiddenMap();
   if(!m[dateKey])m[dateKey]=[];
   if(!m[dateKey].includes(text))m[dateKey].push(text);
@@ -2672,7 +2712,7 @@ function openUsDetail(item){
     } else {
       html+='<div class="us-btn-row">';
       html+='<button class="us-edit-btn" onclick="_detailEdit()">✏️ 수정 · 복사</button>';
-      html+='<button class="us-del-btn" onclick="_detailHide()">숨기기</button>';
+      html+='<button class="us-del-btn" onclick="_detailHide()">🗑️ 삭제</button>';
       html+='</div>';
     }
 
