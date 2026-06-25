@@ -206,7 +206,7 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 
   <div class="btn-row">
     <button class="btn btn-preview" onclick="openPreview()">👁 미리보기</button>
-    <button class="btn btn-export"  onclick="savePDF()">📄 PDF 저장</button>
+    <button class="btn btn-export"  onclick="saveReport()">💾 저장</button>
   </div>
 </div>
 
@@ -230,7 +230,7 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
     <div class="modal-handle"></div>
     <div class="modal-title">공사일보 미리보기</div>
     <div id="previewContent"></div>
-    <button class="modal-pdf"   onclick="savePDF()">📄 PDF 저장</button>
+    <button class="modal-pdf"   onclick="savePDF()">📄 PDF로 저장</button>
     <button class="modal-close" onclick="closePreview()">닫기</button>
   </div>
 </div>
@@ -239,7 +239,7 @@ textarea { resize:vertical; min-height:90px; line-height:1.6; }
 
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, serverTimestamp, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ALL_SCHEDULE, WORKERS, FIREBASE_CONFIG } from './data.js';
 
 // default 앱으로 초기화 — workspace와 동일한 인스턴스 사용
@@ -458,6 +458,26 @@ function buildDoc(d){
 
 window.openPreview=()=>{ document.getElementById('previewContent').innerHTML=buildDoc(collect()); document.getElementById('previewModal').classList.add('open'); };
 window.closePreview=()=>document.getElementById('previewModal').classList.remove('open');
+// ── Firebase 저장 ──
+window.saveReport = async ()=>{
+  const d=collect();
+  if(!d.date||d.date==='날짜를 선택하세요'){alert('날짜를 선택해 주세요.');return;}
+  const btn=document.querySelector('.btn-export');
+  const orig=btn.innerHTML; btn.innerHTML='저장 중...'; btn.disabled=true;
+  try{
+    const dk=selKey||( selDate?selDate.toISOString().slice(0,10):'unknown' );
+    await setDoc(doc(db,'daily_report_docs',dk),{
+      ...d, dateKey:dk, savedAt:serverTimestamp()
+    });
+    btn.innerHTML='✓ 저장 완료!'; btn.style.background='#2e7d32';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';btn.disabled=false;},2200);
+  }catch(e){
+    alert('저장 실패: '+e.message);
+    btn.innerHTML=orig; btn.disabled=false;
+  }
+};
+
+// ── PDF 출력 (미리보기/상세에서 사용) ──
 window.savePDF=()=>{
   const d=collect(), pa=document.getElementById('printArea');
   pa.style.display='block'; pa.innerHTML=buildDoc(d);
