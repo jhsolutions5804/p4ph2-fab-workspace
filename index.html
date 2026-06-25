@@ -341,7 +341,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   .home-sc .scd{font-size:11px;color:#86868b;margin-top:2px}
 
   /* ── 오늘 탭 2열 ── */
-  #tab-today{display:grid !important;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
+  #tab-today{grid-template-columns:1fr 1fr;gap:16px;align-content:start}
   .pc-today-l,.pc-today-r{min-width:0}
   .pc-today-r .report-section{margin-top:0 !important;border-top:none !important;padding-top:0 !important;
     background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:14px 16px !important}
@@ -360,7 +360,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   .md-adj-btn:active{background:#d4e4f7}
 
   /* ── 공정 탭 2분할 ── */
-  #tab-progress{display:grid !important;grid-template-columns:380px 1fr;gap:16px;align-content:start}
+  #tab-progress{grid-template-columns:380px 1fr;gap:16px;align-content:start}
   .prog-left-col{min-width:0;display:flex;flex-direction:column;gap:10px}
   .prog-right-col{min-width:0;background:#fff;border-radius:12px;border:1px solid #e5e5e5;overflow:hidden;position:sticky;top:0}
   .prog-right-empty{display:flex;align-items:center;justify-content:center;height:320px;color:#86868b;font-size:13px;flex-direction:column;gap:8px}
@@ -2438,9 +2438,16 @@ function hideFixedItem(dateKey,text){
 
 function switchTab(name,btn){
   var ALL_TABS=['home','today','twoweek','calendar','progress','attend'];
+  // grid 레이아웃 탭 목록 (CSS에 grid 선언 있는 탭)
+  var GRID_TABS={today:'grid',progress:'grid'};
   ALL_TABS.forEach(function(t){
     var el=document.getElementById('tab-'+t);
-    if(el) el.style.display=(t===name)?'':'none';
+    if(!el) return;
+    if(t===name){
+      el.style.display = GRID_TABS[t] || '';
+    } else {
+      el.style.display = 'none';
+    }
   });
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
@@ -2725,7 +2732,19 @@ function waitForFirebaseAndInit() {
       document.querySelectorAll('.pc-tnav-btn').forEach(function(b){
         b.classList.toggle('active',b.dataset.tab==='home');
       });
-      setTimeout(renderHome,300);
+      // 이달 공수 백그라운드 preload (근태 탭 방문 불필요)
+      var _now=getAppToday();
+      setTimeout(function(){
+        if(window._fbGetMandayMonth){
+          window._fbGetMandayMonth(_now.getFullYear(), _now.getMonth()+1);
+        }
+      }, 500);
+      // Firebase 출역 오늘 구독 (홈 카드용)
+      setTimeout(function(){
+        var _tk=toKey(_now);
+        if(window._fbSubscribeWorker) window._fbSubscribeWorker(_tk);
+      }, 600);
+      setTimeout(renderHome, 800);
     }
   } else {
     setTimeout(waitForFirebaseAndInit, 50);
