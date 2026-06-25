@@ -2621,51 +2621,75 @@ function _usRangeText(u){
   return f(sd)+s+' ~ '+f(ed)+e;
 }
 
+// 현재 상세 모달에 표시 중인 아이템 (전역)
+window._detailItem = null;
+
 function openUsDetail(item){
+  window._detailItem = item;  // 전역에 저장 (onclick에 직접 전달 불필요)
   const body=document.getElementById('us-detail-body');
-  const row=(k,v)=>v
-    ?`<div class="usd-row"><div class="usd-k">${k}</div><div class="usd-v">${_usEsc(v)}</div></div>`
-    :`<div class="usd-row"><div class="usd-k">${k}</div><div class="usd-v empty">—</div></div>`;
+
+  const row = function(k,v){
+    return v
+      ? '<div class="usd-row"><div class="usd-k">'+k+'</div><div class="usd-v">'+_usEsc(v)+'</div></div>'
+      : '<div class="usd-row"><div class="usd-k">'+k+'</div><div class="usd-v empty">—</div></div>';
+  };
 
   // 시간 표현
-  let when;
+  var when;
   if(item._user){
     when=_usRangeText({sdate:item._sd||item.sdate,edate:item._ed||item.edate,stime:item.stime,etime:item.etime});
   } else {
     when=item.time?item.time:'시간 미정';
   }
 
-  let html='';
+  var html='';
   html+=row('내용',item.text);
   html+=row('일시',when);
-  html+=`<div class="usd-row"><div class="usd-k">분류</div><div class="usd-v"><span class="tag tag-${item.tag}">${item.tagLabel}</span></div></div>`;
+  html+='<div class="usd-row"><div class="usd-k">분류</div><div class="usd-v"><span class="tag tag-'+item.tag+'">'+item.tagLabel+'</span></div></div>';
   html+=row('장소',item.place);
   html+=row('참석자',item.att);
   if(item._user) html+=row('등록자',item.reg);
 
-  // 모든 일정에 수정 버튼 표시 (user 일정은 삭제도 가능)
-  const itemJson=JSON.stringify({
-    id:item.id||null,
-    reg:item.reg||'',text:item.text||'',place:item.place||'',att:item.att||'',
-    tag:item.tag||'admin',tagLabel:item.tagLabel||'기타',
-    sdate:item._sd||item.sdate||(window._currentCheckKey||''),
-    edate:item._ed||item.edate||item._sd||item.sdate||(window._currentCheckKey||''),
-    stime:item.stime||'',etime:item.etime||'',
-    isTodo:item.isTodo||false
-  }).replace(/'/g,"&#39;");
+  // 버튼 — onclick에 인자 없이 전역 _detailItem 참조
   if(item._user && item.id){
-    html+='<div class="us-btn-row"><button class="us-edit-btn" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item=\''+itemJson+'\'>수정</button><button class="us-del-btn" onclick="deleteUsSched(\''+item.id+'\')">삭제</button></div>';
-  } else {
-    var _dk=item._sd||item.sdate||(window._currentCheckKey||'');
-    var _tx=item.text||'';
     html+='<div class="us-btn-row">';
-    html+='<button class="us-edit-btn" onclick="openUsEdit(JSON.parse(this.dataset.item))" data-item=\''+itemJson+'\'>✏️ 수정 · 복사</button>';
-    html+='<button class="us-del-btn" onclick="hideFixedItem(\''+_dk+'\',\''+_tx.replace(/\'/g,\'\\&#39;\')+'\')">숨기기</button>';
+    html+='<button class="us-edit-btn" onclick="_detailEdit()">수정</button>';
+    html+='<button class="us-del-btn" onclick="_detailDelete()">삭제</button>';
+    html+='</div>';
+  } else {
+    html+='<div class="us-btn-row">';
+    html+='<button class="us-edit-btn" onclick="_detailEdit()">✏️ 수정 · 복사</button>';
+    html+='<button class="us-del-btn" onclick="_detailHide()">숨기기</button>';
     html+='</div>';
   }
 
   body.innerHTML=html;
   document.getElementById('us-detail-modal').classList.add('on');
+}
+
+function _detailEdit(){
+  var item=window._detailItem; if(!item) return;
+  var editItem={
+    id:item.id||null,
+    reg:item.reg||'', text:item.text||'', place:item.place||'', att:item.att||'',
+    tag:item.tag||'admin', tagLabel:item.tagLabel||'기타',
+    sdate:item._sd||item.sdate||(window._currentCheckKey||''),
+    edate:item._ed||item.edate||item._sd||item.sdate||(window._currentCheckKey||''),
+    stime:item.stime||'', etime:item.etime||'',
+    isTodo:item.isTodo||false
+  };
+  openUsEdit(editItem);
+}
+
+function _detailDelete(){
+  var item=window._detailItem; if(!item||!item.id) return;
+  deleteUsSched(item.id);
+}
+
+function _detailHide(){
+  var item=window._detailItem; if(!item) return;
+  var dk=item._sd||item.sdate||(window._currentCheckKey||'');
+  hideFixedItem(dk, item.text||'');
 }
 
 function closeUsDetail(){document.getElementById('us-detail-modal').classList.remove('on');}
