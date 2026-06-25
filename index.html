@@ -375,6 +375,18 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   #zone-list .zone-card.selected{border-color:#1D5BA6;border-width:2px}
   .zone-bars{grid-template-columns:repeat(4,1fr) !important}
   .ppt-btn-wrap{display:flex;justify-content:flex-end;padding-top:4px}
+
+  /* ── 주간 탭 7열 grid ── */
+  .wk-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:20px}
+  .wk-day-col{background:#fff;border-radius:10px;border:1px solid #e5e5e5;padding:8px 6px;min-width:0;overflow:hidden}
+  .wk-today{border-color:#1D5BA6;border-width:2px}
+  .wk-sat{background:#fafafa}
+  .wk-day-head{margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #f0f0f0}
+  .wk-day-num{font-size:16px;font-weight:700;color:#1d1d1f;line-height:1}
+  .wk-day-dow{font-size:10px;color:#86868b;margin-top:2px}
+  .wk-holi{font-size:9px;color:#c0392b;margin-top:1px}
+  .wk-item{font-size:10px;margin-bottom:2px;line-height:1.4;display:flex;align-items:flex-start;gap:2px;flex-wrap:wrap}
+  .wk-empty{font-size:11px;color:#c7c7cc;text-align:center;padding:8px 0}
   #ppt-btn{width:auto !important;padding:10px 20px !important;font-size:13px !important}
 
   /* 공수 집계표 모달 */
@@ -816,6 +828,27 @@ const db = getFirestore(app);
 // Firebase 연결 상태를 전역에 노출
 window._fbDb = db;
 window._fbReady = true;
+
+// ===== 이달 공수 자동 preload (module 내부 - 동적 import 없이 직접 실행) =====
+(function(){
+  const _pNow = new Date();
+  const _pY = _pNow.getFullYear();
+  const _pM = _pNow.getMonth(); // 0-indexed
+  const _pMs = String(_pM+1).padStart(2,'0');
+  const _pDays = new Date(_pY, _pM+1, 0).getDate();
+  const _pTasks = [];
+  for(let _pd=1; _pd<=_pDays; _pd++){
+    const _pKey = _pY+'-'+_pMs+'-'+String(_pd).padStart(2,'0');
+    _pTasks.push(
+      getDoc(doc(db,'worker_manday',_pKey))
+        .then(snap=>{ window._mandayCache[_pKey]=snap.exists()?(snap.data().md||{}):{};})
+        .catch(()=>{})
+    );
+  }
+  Promise.all(_pTasks).then(()=>{
+    if(typeof window._updateHomeKPI==='function') window._updateHomeKPI();
+  });
+})();
 
 // ===== 사용자 일정 (user_schedules 컬렉션) =====
 // 메모리 캐시
@@ -1650,7 +1683,7 @@ function renderTwoWeek(){
 
   function renderPcWeek(wStart,wLabel){
     const dates=getWeekDates(wStart);
-    const weekdays=dates.filter(function(d){return d.getDay()!==0;}); // 월~토 (일 제외)
+    const weekdays=dates; // 일~토 7일 전체
     const wS=(wStart.getMonth()+1)+'/'+wStart.getDate();
     const wE=(dates[6].getMonth()+1)+'/'+dates[6].getDate();
     let h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
@@ -1667,7 +1700,8 @@ function renderTwoWeek(){
       const isOff=dow===0||dow===6||isHoli;
       const items=[...fixed,...userItems];
       const isSat=dow===6;
-      let cls='wk-day-col'+(isToday?' wk-today':'')+(isSat?' wk-sat':'');
+      const isSun=dow===0;
+      let cls='wk-day-col'+(isToday?' wk-today':'')+(isSat||isSun?' wk-sat':'');
       h+='<div class="'+cls+'">';
       h+='<div class="wk-day-head">';
       h+='<div class="wk-day-num">'+d.getDate()+'</div>';
