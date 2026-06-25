@@ -367,7 +367,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
   .prog-panel-hd{padding:12px 16px;border-bottom:1px solid #e5e5e5;background:#f9fafc;display:flex;align-items:center;justify-content:space-between}
   .prog-panel-hd .ph-name{font-size:14px;font-weight:700;color:#1d1d1f}
   .prog-panel-hd .ph-pct{font-size:13px;font-weight:700;color:#1D5BA6;background:#e8f0fb;padding:3px 10px;border-radius:10px}
-  .prog-panel-body{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 200px)}
+  .prog-panel-body{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 120px)}
   .total-card{grid-template-columns:repeat(4,1fr) !important}
   #zone-list{display:flex;flex-direction:column;gap:8px}
   #zone-list .zone-card{margin-bottom:0 !important;cursor:pointer}
@@ -655,7 +655,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard',sans-serif;bac
       <div id="zone-list"></div>
 
       <!-- PPT 생성 버튼 -->
-      <div class="ppt-btn-wrap">
+      <div class="ppt-btn-wrap" style="display:none">
         <button id="ppt-btn" onclick="generateProgressPPT()" style="padding:10px 20px;background:#1D5BA6;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit">
           📊 PPT 다운로드
         </button>
